@@ -9,6 +9,8 @@ def main():
 	impactFactor = list(journal['Impact_factor'])
 	nIF = 0
 	for i in range(journal.shape[0]):
+		if i % 1000 == 0:
+			print("journal %s" % (i))
 	    if math.isnan(impactFactor[i]):
 	        j = journalAbbrev[i]
 	        query = j + " impact factor"
