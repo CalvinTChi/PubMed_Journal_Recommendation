@@ -52,7 +52,7 @@ def main():
 	            abstract = record['AB']
 	            if journ not in journalAbbrev or year < (presentYear - 10) or len(abstract) == 0:
 	            	nJournalProblem += 1
-	                continue
+	            	continue
 	            impactFactor = float(journal.loc[journal['abbreviation'] == journ, 'Impact_factor'])
 	            impactFactor = round(impactFactor, 3)
 	            content = [[abstract, record['PMID'], "bioinformatics", journ, impactFactor]]
