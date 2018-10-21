@@ -38,6 +38,8 @@ def main():
 	start_time = time.time()
 	print("Start downloading...")
 	nJournalProblem = 0
+        nNoAbstract = 0
+        nOld = 0
 	nFields = 0
 	for i in range(0, len(IDlist), batch_size):
 	    print("%s hours elapsed: batch %s of %s downloaded" % (round((time.time() - start_time) / 3600.0, 2), 
@@ -51,7 +53,12 @@ def main():
 	            year = int(record['PHST'][0][:4])
 	            abstract = record['AB']
 	            if journ not in journalAbbrev or year < (presentYear - 10) or len(abstract) == 0:
-	            	nJournalProblem += 1
+	            	if journ not in journalAbbrev:
+                            nJournalProblem += 1
+                        elif year < (presentYear - 10):
+                            nOld += 1
+                        elif len(abstract) == 0
+                            nNoAbstract += 1
 	            	continue
 	            impactFactor = float(journal.loc[journal['abbreviation'] == journ, 'Impact_factor'])
 	            impactFactor = round(impactFactor, 3)
@@ -60,6 +67,10 @@ def main():
 	        else:
 	        	nFields += 1
 	print("%s abstracts downloaded" % (df.shape[0]))
+        print("%s number of abstracts without fields AB, JT, or PHST" % (nFields))
+        print("%s number of abstracts with journals not in list" % (nJournalProblem))
+        print("%s number of abstracts too old" % (nOld))
+        print("%s number of abstracts with length 0" % (nNoAbstract))
 	df.to_csv("data/abstracts.txt", sep='\t')
 
 if __name__ == "__main__":
