@@ -36,6 +36,9 @@ def main():
 	presentYear = 2018
 
 	start_time = time.time()
+	print("Start downloading...")
+	nJournalProblem = 0
+	nFields = 0
 	for i in range(0, len(IDlist), batch_size):
 	    print("%s hours elapsed: batch %s of %s downloaded" % (round((time.time() - start_time) / 3600.0, 2), 
 	                                                           i, len(IDlist)))
@@ -48,11 +51,14 @@ def main():
 	            year = int(record['PHST'][0][:4])
 	            abstract = record['AB']
 	            if journ not in journalAbbrev or year < (presentYear - 10) or len(abstract) == 0:
+	            	nJournalProblem += 1
 	                continue
 	            impactFactor = float(journal.loc[journal['abbreviation'] == journ, 'Impact_factor'])
 	            impactFactor = round(impactFactor, 3)
 	            content = [[abstract, record['PMID'], "bioinformatics", journ, impactFactor]]
 	            df = df.append(pd.DataFrame(content, columns = df.columns))
+	        else:
+	        	nFields += 1
 	print("%s abstracts downloaded" % (df.shape[0]))
 	df.to_csv("data/abstracts.txt", sep='\t')
 
