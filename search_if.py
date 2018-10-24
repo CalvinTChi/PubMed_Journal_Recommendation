@@ -11,8 +11,8 @@ def main():
     h = {"User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.75 Safari/537.36"}
     journalAbbrev = list(journal['abbreviation'])
     impactFactor = list(journal['Impact_factor'])
-    nIF = 370
-    for i in range(8300, journal.shape[0], 1):
+    nIF = 0
+    for i in range(0, journal.shape[0], 1):
         if i % 100 == 0:
             print("journal %s, %s new impact factors filled." % (i, nIF))
         if math.isnan(impactFactor[i]):
@@ -28,12 +28,12 @@ def main():
                 journal.iloc[i, 4] = float(ret.text)
                 nIF += 1
                 if nIF == 10:
-                    journal.to_csv("data/journals.txt", sep = '\t')
+                    journal.to_csv("data/journals.txt", sep = '\t', index = False)
     print("%s number of new impact factors filled." % (nIF))
     idx = ~np.isnan(journal['Impact_factor'])
     journal = journal.loc[idx, :]
     print("%s number of journals in list." % (journal.shape[0]))
-    journal.to_csv("data/journals.txt", sep = '\t')
+    journal.to_csv("data/journals.txt", sep = '\t', index = False)
 
 if __name__ == "__main__":
     main()
