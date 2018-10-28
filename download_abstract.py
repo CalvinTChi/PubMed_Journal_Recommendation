@@ -2,6 +2,7 @@ from Bio import Entrez
 from Bio import Medline
 import numpy as np
 import pandas as pd
+from urllib.error import URLError
 import math
 import time
 import sys
@@ -52,6 +53,20 @@ def getPMIDbyTopic(topics):
     ret.clear()
     return retID
 
+def loadRecords(IDlist, batch_size, num):
+    retries = 3
+    for i in range(retries):
+        try:
+            handle = Entrez.efetch(db="pubmed", id=IDlist, rettype="medline", 
+                retmode="text", retmax = batch_size, retstart = num)
+            records = Medline.parse(handle)
+            r = next(records)
+            return records
+        except URLError:
+            print("batch of size %s at abstract %s failed to be retrieved at try %s" % (batch_size, num, i + 1))
+            time.sleep(10)
+    print("BATCH OF SIZE %s AT ABSTRACT %s CANNOT BE RETRIEVED" % (batch_size, num))
+    sys.exit(0)
 
 def main():
     journal = pd.read_table("data/journals.txt", delimiter="\t", header = 0)
@@ -90,11 +105,9 @@ def main():
     for topic in retID:
         IDlist = retID[topic]
         for i in range(0, len(IDlist), batch_size):
-            print("%s hours elapsed: abstract %s of %s downloaded" % (round((time.time() - start_time) / 3600.0, 2), 
-                                                                   i + 1, len(IDlist)))
-            handle = Entrez.efetch(db="pubmed", id=IDlist, rettype="medline", 
-                               retmode="text", retmax = batch_size, retstart = i)
-            records = Medline.parse(handle)
+            print("%s hours elapsed: abstract %s of %s downloaded from %s" % (round((time.time() - start_time) / 3600.0, 2), 
+                                                                   i + 1, len(IDlist), topic))
+            records = loadRecords(IDlist, batch_size, i)
             for record in records:
                 if {'AB', 'TA', 'PHST'} <= set(record.keys()):
                     journ = record['TA'].lower()
