@@ -90,7 +90,7 @@ def main():
     nJournals = 0
     for topic in retID:
         IDlist = retID[topic]
-        for i in range(s0, len(IDlist), batch_size):
+        for i in range(0, len(IDlist), batch_size):
             print("%s hours elapsed: abstract %s of %s downloaded" % (round((time.time() - start_time) / 3600.0, 2), 
                                                                    i + 1, len(IDlist)))
             handle = Entrez.efetch(db="pubmed", id=IDlist, rettype="medline", 
