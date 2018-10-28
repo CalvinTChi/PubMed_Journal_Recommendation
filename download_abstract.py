@@ -82,7 +82,6 @@ def main():
     df.to_csv("data/abstracts.txt", sep = '\t', index = False)
     presentYear = 2018
 
-    sys.exit(0)
     start_time = time.time()
     print("Download starting...")
     nJournalProblem = 0
