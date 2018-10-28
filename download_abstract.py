@@ -79,15 +79,18 @@ def main():
     
     batch_size = 10000
     df = pd.DataFrame(columns=['abstract', 'PMID', 'category', 'journalAbbrev', 'impact_factor'])
+    df.to_csv("data/abstracts.txt", sep = '\t', index = False)
     presentYear = 2018
 
+    sys.exit(0)
     start_time = time.time()
     print("Download starting...")
     nJournalProblem = 0
     nMissingFields = 0
+    nJournals = 0
     for topic in retID:
         IDlist = retID[topic]
-        for i in range(0, len(IDlist), batch_size):
+        for i in range(s0, len(IDlist), batch_size):
             print("%s hours elapsed: abstract %s of %s downloaded" % (round((time.time() - start_time) / 3600.0, 2), 
                                                                    i + 1, len(IDlist)))
             handle = Entrez.efetch(db="pubmed", id=IDlist, rettype="medline", 
@@ -108,11 +111,17 @@ def main():
                     df = df.append(pd.DataFrame(content, columns = df.columns))
                 else:
                     nMissingFields += 1
-    print("%s abstracts downloaded" % (df.shape[0]))
+        with open("data/abstracts.txt", 'a') as f:
+            nJournals += df.shape[0]
+            df.to_csv(f, header = False, index = False, sep = '\t')
+        df.drop(df.index, inplace=True)
+
+    print("%s abstracts downloaded" % (nJournals))
     print("%s number of abstracts without fields AB, TA, or PHST" % (nMissingFields))
     print("%s number of abstracts with journals not in list" % (nJournalProblem))
-    df.to_csv("data/abstracts.txt", sep='\t', index = False)
 
 if __name__ == "__main__":
     main()
+
+
 
