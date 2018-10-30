@@ -1,6 +1,7 @@
 from keras.models import Sequential
 from keras.layers import Dense, Flatten, Conv1D, MaxPooling1D, Activation
 from keras.utils import to_categorical
+import keras.optimizers
 import numpy as np
 import pandas as pd
 import os
@@ -10,10 +11,8 @@ import math
 label_mapping = {'bioinformatics': 0, 'development': 1, 'epigenetics': 2, 'mendelian': 3, 
                 'omics': 4, 'population_genetics': 5, 'statistical_genetics': 6, 'structure': 7}
 batch_size = 512
-
-
-#word2vec = gensim.models.KeyedVectors.load_word2vec_format('data/PubMed-and-PMC-w2v.bin', 
-#                                                    binary=True)
+word2vec = gensim.models.KeyedVectors.load_word2vec_format('data/PubMed-and-PMC-w2v.bin', 
+                                                    binary=True)
 
 # INPUT: pandas df of rows x features1, where features = [abstract, PMID, category, journalAbbrev, impact_factor]
 # OUTPUT: (1) pandas df of rows x word2vec feature, (2) vector of labes in [1, 10].
@@ -22,8 +21,6 @@ def generate_feature_label_pair(mat):
     X = np.zeros(shape = (n, 200))
     Y = np.zeros(shape = n)
     for i in range(n):
-        if i % 10000 == 0:
-            print("%s of %s processed" % (i, n))
         abstract = mat.iloc[i, 0].split(" ")
         embedding = np.zeros(200)
         nWords = 0
@@ -62,24 +59,22 @@ def create_model():
     model = Sequential()
     model.add(Conv1D(128, 5, activation='relu', input_shape = (200, 1)))
     model.add(MaxPooling1D(5))
-    model.add(Conv1D(128, 5, activation='relu'))
+    model.add(Conv1D(128, 5, activation='tanh'))
     model.add(MaxPooling1D(35))
     model.add(Flatten())
-    model.add(Dense(128, activation = 'relu'))
+    model.add(Dense(128, activation = 'tanh'))
     model.add(Dense(8, activation = 'softmax'))
     model.compile(loss = 'categorical_crossentropy',
-                 optimizer = 'adam', metrics = ['accuracy'])
+                 optimizer = keras.optimizers.Adam(lr=0.0001, clipnorm = 1), metrics = ['accuracy'])
     return model
 
 def main():
     if not os.path.isfile("data/train.txt") or not os.path.isfile("data/dev.txt") or not os.path.isfile("data/test.txt"):
         train_dev_test_split()
-    word2vec = gensim.models.KeyedVectors.load_word2vec_format('data/PubMed-and-PMC-w2v.bin', 
-                                                    binary=True)
+    nTrain = 332305 
     dev = pd.read_table("data/dev.txt", delimiter="\t", header = 0)
     devX, devY = generate_feature_label_pair(dev)
 
-    nTrain = int(os.popen('wc -l data/train.txt').read().split(" ")[2])
     nBatches = math.ceil(nTrain / batch_size)
     model = create_model()
     model.fit_generator(sample_generator(), steps_per_epoch = nBatches, epochs=2, validation_data=(devX, devY))
