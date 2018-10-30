@@ -59,8 +59,7 @@ def loadRecords(IDlist, batch_size, num):
         try:
             handle = Entrez.efetch(db="pubmed", id=IDlist, rettype="medline", 
                 retmode="text", retmax = batch_size, retstart = num)
-            records = Medline.parse(handle)
-            r = next(records)
+            records = list(Medline.parse(handle))
             return records
         except URLError:
             print("batch of size %s at abstract %s failed to be retrieved at try %s" % (batch_size, num, i + 1))
