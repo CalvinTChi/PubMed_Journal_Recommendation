@@ -11,11 +11,12 @@ import math
 label_mapping = {'bioinformatics': 0, 'development': 1, 'epigenetics': 2, 'mendelian': 3, 
                 'omics': 4, 'population_genetics': 5, 'statistical_genetics': 6, 'structure': 7}
 batch_size = 512
-word2vec = gensim.models.KeyedVectors.load_word2vec_format('data/PubMed-and-PMC-w2v.bin', 
-                                                    binary=True)
+global trainIterator
+trainIterator = pd.read_table("data/train.txt", delimiter="\t", header = 0, chunksize=BATCH_SIZE)
+
 
 # INPUT: pandas df of rows x features1, where features = [abstract, PMID, category, journalAbbrev, impact_factor]
-# OUTPUT: (1) pandas df of rows x word2vec feature, (2) vector of labes in [1, 10].
+# OUTPUT: (1) pandas df of rows x word2vec feature, (2) vector of labels in [0, 7].
 def generate_feature_label_pair(mat):
     n = mat.shape[0]
     X = np.zeros(shape = (n, 200))
