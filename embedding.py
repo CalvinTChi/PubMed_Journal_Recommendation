@@ -50,9 +50,10 @@ def prepare_embedding_matrix():
     word_index = tokenizer.word_index
     embedding_matrix = np.zeros((len(word_index) + 1, EMBEDDING_DIM))
     for word, i in word_index.items():
-        vec = word2vec[word]
-        vec = vec / np.linalg.norm(vec)
-        embedding_matrix[i] = vec
+        if word in word2vec:
+            vec = word2vec[word]
+            vec = vec / np.linalg.norm(vec)
+            embedding_matrix[i] = vec
     return embedding_matrix
 
 def main():
