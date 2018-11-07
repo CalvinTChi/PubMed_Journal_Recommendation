@@ -28,7 +28,7 @@ embedding_matrix = pickle.load(open("data/embedding.p", "rb"))
 def generate_feature_label_pair(mat):
     X = tokenizer.texts_to_sequences(mat.iloc[:, 0])
     X = pad_sequences(X, maxlen = MAX_SEQ_LENGTH, padding='post')
-    X = np.expand_dims(X, axis = 2)
+    #X = np.expand_dims(X, axis = 2)
     Y = mat.iloc[:, 2].tolist()
     Y = [label_mapping[label] for label in Y]
     Y = to_categorical(Y)
@@ -64,8 +64,6 @@ def create_model():
     model.compile(loss = 'categorical_crossentropy',
                  optimizer = keras.optimizers.Adam(lr=0.001, clipnorm = 1), 
                  metrics = ['accuracy'])
-    print(model.summary())
-    sys.exit(0)
     return model
 
 def main():
@@ -74,10 +72,9 @@ def main():
         nTrain = sum(1 for _ in f)
     dev = pd.read_table("data/dev.txt", delimiter="\t", header = 0)
     devX, devY = generate_feature_label_pair(dev)
-    nBatches = math.ceil(nTrain / batch_size)
+    nBatches = math.ceil(nTrain / BATCH_SIZE)
     model = create_model()
     model.fit_generator(sample_generator(), steps_per_epoch = nBatches, epochs=2, validation_data=(devX, devY))
-
     model.save("model/category1")
 
 if __name__ == "__main__":
