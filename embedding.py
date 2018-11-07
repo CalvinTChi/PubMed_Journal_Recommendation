@@ -17,7 +17,7 @@ word2vec = gensim.models.KeyedVectors.load_word2vec_format('data/PubMed-and-PMC-
 
 trainIterator = iter(trainIterator)
 uniqueWords = set()
-tokenizer = Tokenizer(nb_words=MAX_NB_WORDS)
+tokenizer = Tokenizer(num_words=MAX_NB_WORDS)
 
 def train_dev_test_split():
     abstracts = pd.read_table("data/abstracts.txt", delimiter="\t", header = 0)
