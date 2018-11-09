@@ -7,7 +7,7 @@ import os
 import sys
 
 BATCH_SIZE = 1000
-MAX_NB_WORDS = 1500000
+MAX_NB_WORDS = 750000
 EMBEDDING_DIM = 200
 
 global trainIterator

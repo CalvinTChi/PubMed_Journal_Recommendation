@@ -23,7 +23,7 @@ embedding_matrix = pickle.load(open("data/embedding.p", "rb"))
 
 # INPUT: pandas df of rows x features1, where features = [abstract, PMID, category, journalAbbrev, impact_factor]
 # OUTPUT: (1) pandas df of rows x word2vec feature, (2) vector of labels in [0, 7].
-def generate_feature_label_pair(mat, target):
+def generate_feature_label_pair(mat):
     X = tokenizer.texts_to_sequences(mat.iloc[:, 0])
     X = pad_sequences(X, maxlen = MAX_SEQ_LENGTH, padding='post')
     Y = mat.iloc[:, 4].tolist()
@@ -71,7 +71,7 @@ def main():
     nBatches = math.ceil(nTrain / BATCH_SIZE)
     model = create_model()
     model.fit_generator(sample_generator(), steps_per_epoch = nBatches, epochs=2, validation_data=(devX, devY))
-    model.save("model/impact_factor1")
+    model.save("model/impact_factor1.h5")
 
 if __name__ == "__main__":
     main()
