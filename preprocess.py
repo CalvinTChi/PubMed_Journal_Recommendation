@@ -9,7 +9,6 @@ import sys
 BATCH_SIZE = 1000
 MAX_NB_WORDS = 750000
 EMBEDDING_DIM = 200
-JOURNAL_MIN_NUM = 40
 
 global trainIterator
 trainIterator = pd.read_table("data/train.txt", delimiter="\t", header = 0, chunksize=BATCH_SIZE)
@@ -36,30 +35,6 @@ def split_dataset(p = [0.1, 0.1]):
         with open("data/dev.txt", "a") as f:
             dev.to_csv(f, header = False, index = False, sep = '\t')
         with open("data/test.txt", "a") as f:
-            test.to_csv(f, header = False, index = False, sep = '\t')
-
-# p = percentage dataset to allocate to development and test dataset. rest is training
-# Splits entire dataset into train, dev, and test
-def journal_prediction_split_dataset(p = [0.1, 0.1]):
-    metadata = pd.read_table("data/metadata.txt", delimiter = "\t", header = 0)
-    journalAbbrev = metadata['journalAbbrev'].tolist()
-    count = {x: journalAbbrev.count(x) for x in set(journalAbbrev)}
-    journalSet = set([j for j in journalAbbrev  if count[j] >= JOURNAL_MIN_NUM])
-    abstracts = pd.read_table("data/abstracts.txt", delimiter="\t", header = 0, chunksize = 50000)
-    train = pd.DataFrame(columns=['abstract', 'PMID', 'category', 'journalAbbrev', 'impact_factor'])
-    dev = pd.DataFrame(columns=['abstract', 'PMID', 'category', 'journalAbbrev', 'impact_factor'])
-    test = pd.DataFrame(columns=['abstract', 'PMID', 'category', 'journalAbbrev', 'impact_factor'])
-    train.to_csv("data/train_j.txt", index = False, sep = '\t')
-    dev.to_csv("data/dev_j.txt", index = False, sep = '\t')
-    test.to_csv("data/test_j.txt", index = False, sep = '\t')
-    for chunk in abstracts:
-        chunk = chunk.iloc[np.where(chunk['journalAbbrev'].isin(journalSet))]
-        train, dev, test = train_dev_test_split(chunk, p)
-        with open("data/train_j.txt", "a") as f:
-            train.to_csv(f, header = False, index = False, sep = '\t')
-        with open("data/dev_j.txt", "a") as f:
-            dev.to_csv(f, header = False, index = False, sep = '\t')
-        with open("data/test_j.txt", "a") as f:
             test.to_csv(f, header = False, index = False, sep = '\t')
 
 # INPUT: chunk = data frame of subset of data, p = percentage dataset to allocate to development and test dataset
@@ -110,25 +85,19 @@ def shuffle_dataset():
     abstracts = abstracts.sample(frac=1)
     abstracts.to_csv("data/abstracts.txt", index = False, sep = '\t')
 
-
 def main():
-    #shuffle_dataset()
-    #if not os.path.isfile("data/train.txt") or not os.path.isfile("data/dev.txt") or not os.path.isfile("data/test.txt"):
-    #    split_dataset()
-    #if not os.path.isfile("data/train_j.txt") or not os.path.isfile("data/dev_j.txt") or not os.path.isfile("data/test_j.txt"):
-    #    journal_prediction_split_dataset()
-    #generate_metadata()
-    #batches = batch_generator()
-    #for batch in batches:
-    #    tokenizer.fit_on_text(batch)
-    #    count_unique_words(batch)
-    #embedding_matrix = prepare_embedding_matrix()
-    #pickle.dump(tokenizer, open("data/tokenizer.p", "wb"))
-    #pickle.dump(embedding_matrix, open("data/embedding.p", "wb"))
-    #print("Number of unique words: %s" % len(uniqueWords))
     shuffle_dataset()
-    if not os.path.isfile("data/train_j.txt") or not os.path.isfile("data/dev_j.txt") or not os.path.isfile("data/test_j.txt"):
-        journal_prediction_split_dataset()
+    if not os.path.isfile("data/train.txt") or not os.path.isfile("data/dev.txt") or not os.path.isfile("data/test.txt"):
+        split_dataset()
+    generate_metadata()
+    batches = batch_generator()
+    for batch in batches:
+        tokenizer.fit_on_text(batch)
+        count_unique_words(batch)
+    embedding_matrix = prepare_embedding_matrix()
+    pickle.dump(tokenizer, open("data/tokenizer.p", "wb"))
+    pickle.dump(embedding_matrix, open("data/embedding.p", "wb"))
+    print("Number of unique words: %s" % len(uniqueWords))
 
 if __name__ == "__main__":
     main()
