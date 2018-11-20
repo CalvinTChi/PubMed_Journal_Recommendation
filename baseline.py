@@ -19,8 +19,8 @@ MAX_SEQ_LENGTH = 500
 embedding_matrix = pickle.load(open("data/embedding.p", "rb"))
 tokenizer = pickle.load(open("data/tokenizer.p", "rb"))
 global trainIterator
-trainIterator = pd.read_table("data/train_j.txt", delimiter="\t", header = 0, chunksize=BATCH_SIZE)
-trainIterator = iter(trainIterator)
+#trainIterator = pd.read_table("data/train_j.txt", delimiter="\t", header = 0, chunksize=BATCH_SIZE)
+#trainIterator = iter(trainIterator)
 
 # INPUT: chunk = data frame of subset of data, p = percentage dataset to allocate to development and test dataset
 # OUTPUT: dataframes of train, development, and test dataset
