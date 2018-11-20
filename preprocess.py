@@ -1,7 +1,9 @@
 from keras.preprocessing.text import Tokenizer
+from sklearn.preprocessing import LabelEncoder
+from sklearn import preprocessing
 import numpy as np
 import pandas as pd
-import gensim
+#import gensim
 import pickle
 import os
 import sys
@@ -9,14 +11,39 @@ import sys
 BATCH_SIZE = 1000
 MAX_NB_WORDS = 750000
 EMBEDDING_DIM = 200
+journalSet = None
 
 global trainIterator
-trainIterator = pd.read_table("data/train.txt", delimiter="\t", header = 0, chunksize=BATCH_SIZE)
-word2vec = gensim.models.KeyedVectors.load_word2vec_format('data/PubMed-and-PMC-w2v.bin', 
-                                                    binary=True)
-trainIterator = iter(trainIterator)
-uniqueWords = set()
-tokenizer = Tokenizer(num_words=MAX_NB_WORDS)
+#trainIterator = pd.read_table("data/train.txt", delimiter="\t", header = 0, chunksize=BATCH_SIZE)
+#word2vec = gensim.models.KeyedVectors.load_word2vec_format('data/PubMed-and-PMC-w2v.bin', 
+#                                                   binary=True)
+#trainIterator = iter(trainIterator)
+#uniqueWords = set()
+#tokenizer = Tokenizer(num_words=MAX_NB_WORDS)
+
+# p = percentage dataset to allocate to development and test dataset. rest is training (for journal prediction)
+# Splits entire dataset into train, dev, and test
+def journal_prediction_split_dataset(p = [0.1, 0.1]):
+    metadata = pd.read_table("data/metadata.txt", delimiter = "\t", header = 0)
+    journalAbbrev = metadata['journalAbbrev'].tolist()
+    count = {x: journalAbbrev.count(x) for x in set(journalAbbrev)}
+    journalSet = set([j for j in journalAbbrev  if count[j] >= JOURNAL_MIN_NUM])
+    # Process dev dataset
+    dev = pd.read_table("data/dev.txt", delimiter="\t", header = 0)
+    devJ = dev.iloc[np.where(dev['journalAbbrev'].isin(journalSet))]
+    devJ.to_csv("data/dev_j.txt", index = False, sep = '\t')
+    # Process test dataset
+    test = pd.read_table("data/test.txt", delimiter="\t", header = 0)
+    testJ = test.iloc[np.where(test['journalAbbrev'].isin(journalSet))]
+    testJ.to_csv("data/test_j.txt", index = False, sep = '\t')
+    # Process training dataset
+    train = pd.read_table("data/train.txt", delimiter="\t", header = 0)
+    trainJ = pd.DataFrame(columns=['abstract', 'PMID', 'category', 'journalAbbrev', 'impact_factor'])
+    trainJ.to_csv("data/train_j.txt", index = False, sep = '\t')
+    for chunk in train:
+        trainJ = chunk.iloc[np.where(chunk['journalAbbrev'].isin(journalSet))]
+        with open("data/train_j.txt", "a") as f:
+            train.to_csv(f, header = False, index = False, sep = '\t')
 
 # p = percentage dataset to allocate to development and test dataset. rest is training
 # Splits entire dataset into train, dev, and test
@@ -86,18 +113,28 @@ def shuffle_dataset():
     abstracts.to_csv("data/abstracts.txt", index = False, sep = '\t')
 
 def main():
-    shuffle_dataset()
-    if not os.path.isfile("data/train.txt") or not os.path.isfile("data/dev.txt") or not os.path.isfile("data/test.txt"):
-        split_dataset()
-    generate_metadata()
-    batches = batch_generator()
-    for batch in batches:
-        tokenizer.fit_on_text(batch)
-        count_unique_words(batch)
-    embedding_matrix = prepare_embedding_matrix()
-    pickle.dump(tokenizer, open("data/tokenizer.p", "wb"))
-    pickle.dump(embedding_matrix, open("data/embedding.p", "wb"))
-    print("Number of unique words: %s" % len(uniqueWords))
+    #shuffle_dataset()
+    # Prepare datasets for category and impact factor prediction
+    #if not os.path.isfile("data/train.txt") or not os.path.isfile("data/dev.txt") or not os.path.isfile("data/test.txt"):
+    #    split_dataset()
+    #generate_metadata()
+    # Prepare datasets for journal prediction
+    if not os.path.isfile("data/train_j.txt") or not os.path.isfile("data/dev_j.txt") or not os.path.isfile("data/test_j.txt"):
+        journal_prediction_split_dataset()
+    # Encode journal abbreviations into integers from [0, num_journals]
+    encoder = LabelEncoder()
+    encoder.fit(list(journalSet))
+    pickle.dump(encoder, open("data/label_encoder.p", "wb"))
+    # Tokenize all words in abstract
+    #batches = batch_generator()
+    #for batch in batches:
+    #    tokenizer.fit_on_text(batch)
+    #    count_unique_words(batch)
+    #Prepare embedding matrix
+    #embedding_matrix = prepare_embedding_matrix()
+    #pickle.dump(tokenizer, open("data/tokenizer.p", "wb"))
+    #pickle.dump(embedding_matrix, open("data/embedding.p", "wb"))
+    #print("Number of unique words: %s" % len(uniqueWords))
 
 if __name__ == "__main__":
     main()
