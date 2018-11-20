@@ -1,6 +1,7 @@
 from keras.layers import Dense, Flatten, Embedding, Conv1D, MaxPooling1D, Activation
 from tensorflow.contrib.keras.api.keras.initializers import Constant
 from keras.preprocessing.sequence import pad_sequences
+from sklearn.preprocessing import LabelEncoder
 from keras.models import Sequential
 from keras.utils import to_categorical
 import keras.optimizers
@@ -18,9 +19,9 @@ BATCH_SIZE = 512
 MAX_SEQ_LENGTH = 500
 embedding_matrix = pickle.load(open("data/embedding.p", "rb"))
 tokenizer = pickle.load(open("data/tokenizer.p", "rb"))
-global trainIterator
-#trainIterator = pd.read_table("data/train_j.txt", delimiter="\t", header = 0, chunksize=BATCH_SIZE)
-#trainIterator = iter(trainIterator)
+labelEncoder = pickle.load(open("data/label_encoder.p", "rb"))
+trainIterator = pd.read_table("data/train_j.txt", delimiter="\t", header = 0, chunksize=BATCH_SIZE)
+trainIterator = iter(trainIterator)
 
 # INPUT: chunk = data frame of subset of data, p = percentage dataset to allocate to development and test dataset
 # OUTPUT: dataframes of train, development, and test dataset
@@ -39,7 +40,7 @@ def generate_feature_label_pair(mat):
     X = tokenizer.texts_to_sequences(mat.iloc[:, 0])
     X = pad_sequences(X, maxlen = MAX_SEQ_LENGTH, padding='post')
     Y = mat.iloc[:, 3].tolist()
-    Y = [label_mapping[label] for label in Y]
+    Y = labelEncoder.transform(Y)
     Y = to_categorical(Y)
     return X, Y
 
@@ -48,7 +49,9 @@ def sample_generator():
         try:
             chunk = next(trainIterator)
         except:
+            global trainIterator
             trainIterator = pd.read_table("data/train_j.txt", delimiter="\t", header = 0, chunksize=BATCH_SIZE)
+            global trainIterator
             trainIterator = iter(trainIterator)
             chunk = next(trainIterator)
         X, Y = generate_feature_label_pair(chunk)
@@ -75,33 +78,7 @@ def create_model():
                  metrics = ['accuracy'])
     return model
 
-# p = percentage dataset to allocate to development and test dataset. rest is training
-# Splits entire dataset into train, dev, and test
-def journal_prediction_split_dataset(p = [0.1, 0.1]):
-    metadata = pd.read_table("data/metadata.txt", delimiter = "\t", header = 0)
-    journalAbbrev = metadata['journalAbbrev'].tolist()
-    count = {x: journalAbbrev.count(x) for x in set(journalAbbrev)}
-    journalSet = set([j for j in journalAbbrev  if count[j] >= JOURNAL_MIN_NUM])
-    abstracts = pd.read_table("data/abstracts.txt", delimiter="\t", header = 0, chunksize = 50000)
-    train = pd.DataFrame(columns=['abstract', 'PMID', 'category', 'journalAbbrev', 'impact_factor'])
-    dev = pd.DataFrame(columns=['abstract', 'PMID', 'category', 'journalAbbrev', 'impact_factor'])
-    test = pd.DataFrame(columns=['abstract', 'PMID', 'category', 'journalAbbrev', 'impact_factor'])
-    train.to_csv("data/train_j.txt", index = False, sep = '\t')
-    dev.to_csv("data/dev_j.txt", index = False, sep = '\t')
-    test.to_csv("data/test_j.txt", index = False, sep = '\t')
-    for chunk in abstracts:
-        chunk = chunk.iloc[np.where(chunk['journalAbbrev'].isin(journalSet))]
-        train, dev, test = train_dev_test_split(chunk, p)
-        with open("data/train_j.txt", "a") as f:
-            train.to_csv(f, header = False, index = False, sep = '\t')
-        with open("data/dev_j.txt", "a") as f:
-            dev.to_csv(f, header = False, index = False, sep = '\t')
-        with open("data/test_j.txt", "a") as f:
-            test.to_csv(f, header = False, index = False, sep = '\t')
-
 def main():
-    if not os.path.isfile("data/train_j.txt") or not os.path.isfile("data/dev_j.txt") or not os.path.isfile("data/test_j.txt"):
-        journal_prediction_split_dataset()
     # Get number of training samples
     with open("data/train_j.txt") as f:
         nTrain = sum(1 for _ in f)
@@ -116,11 +93,5 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
 
 
