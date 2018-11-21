@@ -41,17 +41,16 @@ def generate_feature_label_pair(mat):
     X = pad_sequences(X, maxlen = MAX_SEQ_LENGTH, padding='post')
     Y = mat.iloc[:, 3].tolist()
     Y = labelEncoder.transform(Y)
-    Y = to_categorical(Y)
+    Y = to_categorical(Y, num_classes = len(labelEncoder.classes_))
     return X, Y
 
 def sample_generator():
+    global trainIterator
     while True:
         try:
             chunk = next(trainIterator)
         except:
-            global trainIterator
             trainIterator = pd.read_table("data/train_j.txt", delimiter="\t", header = 0, chunksize=BATCH_SIZE)
-            global trainIterator
             trainIterator = iter(trainIterator)
             chunk = next(trainIterator)
         X, Y = generate_feature_label_pair(chunk)
@@ -72,7 +71,7 @@ def create_model():
     model.add(MaxPooling1D(35))
     model.add(Flatten())
     model.add(Dense(128, activation = 'relu'))
-    model.add(Dense(8, activation = 'softmax'))
+    model.add(Dense(len(labelEncoder.classes_), activation = 'softmax'))
     model.compile(loss = 'categorical_crossentropy',
                  optimizer = keras.optimizers.Adam(lr=0.001), 
                  metrics = ['accuracy'])
@@ -85,8 +84,7 @@ def main():
     dev = pd.read_table("data/dev_j.txt", delimiter="\t", header = 0)
     devX, devY = generate_feature_label_pair(dev)
     nBatches = math.ceil(nTrain / BATCH_SIZE)
-    print(devY[:10])
-    sys.exit(2)
+    trainIterator2 = pd.read_table("data/train_j.txt", delimiter="\t", header = 0)
     model = create_model()
     model.fit_generator(sample_generator(), steps_per_epoch = nBatches, epochs=2, validation_data=(devX, devY))
     model.save("model/journal_baseline.h5")
