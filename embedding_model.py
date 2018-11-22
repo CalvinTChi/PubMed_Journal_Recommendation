@@ -1,14 +1,13 @@
-from keras.preprocessing.sequence import pad_sequences
-from keras import backend as K
-from keras.models import load_model
+from keras.layers import Dense, Activation
 from keras.models import Model
+from keras.models import Sequential
+from keras.preprocessing.sequence import pad_sequences
+from keras.models import load_model
 import keras.optimizers
-from sklearn.decomposition import PCA
 from visualize_embedding import get_topic_embedding
 from visualize_embedding import get_if_embedding
 from baseline import generate_feature_label_pair
-import matplotlib.pyplot as plt
-import getopt
+import math
 import numpy as np
 import pandas as pd
 import keras
@@ -29,6 +28,7 @@ trainIterator = pd.read_table("data/train_j.txt", delimiter="\t", header = 0, ch
 trainIterator = iter(trainIterator)
 
 def convert2embedding(X):
+        print(X.shape)
 	topic_embedding = get_topic_embedding(topic_model, X)
 	if_embedding = get_if_embedding(if_model, X)
 	embedding = np.concatenate((topic_embedding, if_embedding), axis = 1)
@@ -49,9 +49,9 @@ def sample_generator():
 
 def create_model():
     model = Sequential()
-    model.add(layers.Dense(units=1200, activation='relu', input_shape=(EMBEDDING_SIZE,)))
-    model.add(layers.Dense(units=800, activation='relu'))
-    model.add(layers.Dense(units=len(labelEncoder.classes_), activation = 'softmax'))
+    model.add(Dense(units=1200, activation='relu', input_shape=(EMBEDDING_SIZE,)))
+    model.add(Dense(units=800, activation='relu'))
+    model.add(Dense(units=len(labelEncoder.classes_), activation = 'softmax'))
     model.compile(loss = 'categorical_crossentropy',
                  optimizer = keras.optimizers.Adam(lr=0.001), 
                  metrics = ['accuracy'])
@@ -71,6 +71,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
 

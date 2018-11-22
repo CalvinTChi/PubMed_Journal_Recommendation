@@ -87,7 +87,7 @@ def main():
     trainIterator2 = pd.read_table("data/train_j.txt", delimiter="\t", header = 0)
     model = create_model()
     model.fit_generator(sample_generator(), steps_per_epoch = nBatches, epochs=2, validation_data=(devX, devY))
-    model.save("model/journal_baseline.h5")
+    model.save("model/journal_embedding_model.h5")
 
 if __name__ == "__main__":
     main()

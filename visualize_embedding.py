@@ -10,6 +10,9 @@ import pandas as pd
 import keras
 import pickle
 import sys
+import os
+
+os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 label_mapping = {0:'bioinformatics', 1:'development', 2:'epigenetics', 3:'mendelian', 
                 4:'omics', 5:'population_genetics', 6:'statistical_genetics', 7:'structure'}
