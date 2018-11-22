@@ -29,12 +29,13 @@ def generate_abstract_label(mat, yIdx):
 
 def get_topic_embedding(model, X):
 	f = Model(inputs=model.input, outputs=model.layers[-1].input)
-	embedding = f.predict(X)
-	W = model.layers[-1].get_weights()[0]
-	b = model.layers[-1].get_weights()[1]
-	b = np.reshape(b, (1, len(b)))
-	embedding = np.matmul(embedding, W) + np.matmul(np.ones((embedding.shape[0], 1)), b)
-	return embedding
+	return f.predict(X)
+	#embedding = f.predict(X)
+	#W = model.layers[-1].get_weights()[0]
+	#b = model.layers[-1].get_weights()[1]
+	#b = np.reshape(b, (1, len(b)))
+	#embedding = np.matmul(embedding, W) + np.matmul(np.ones((embedding.shape[0], 1)), b)
+	#return embedding
 
 def get_if_embedding(model, X):
 	f = Model(inputs=model.input, outputs=model.layers[-2].output)
@@ -53,7 +54,7 @@ def plot_topic_pca(embedding, Y, title, filename):
 	for y in np.unique(Y):
 	    ix = np.where(np.array(Y) == y)
 	    ax.scatter(x_r[ix[0], 0], x_r[ix[0], 1], c = topic_colors[y], label = y, s = 10, alpha = 0.5)
-	lgd = ax.legend(bbox_to_anchor=(1.35, 0.7))
+	lgd = ax.legend(bbox_to_anchor=(1.05, 0.7))
 	plt.rcParams["figure.figsize"] = [8, 6]
 	plt.title(title)
 	plt.xlabel("PC1")
