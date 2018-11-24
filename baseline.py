@@ -83,7 +83,6 @@ def main():
     dev = pd.read_table("data/dev_j.txt", delimiter="\t", header = 0)
     devX, devY = generate_feature_label_pair(dev)
     nBatches = math.ceil(nTrain / BATCH_SIZE)
-    trainIterator2 = pd.read_table("data/train_j.txt", delimiter="\t", header = 0)
     model = create_model()
     model.fit_generator(sample_generator(), steps_per_epoch = nBatches, epochs=2, validation_data=(devX, devY))
     model.save("model/journal_embedding_model.h5")

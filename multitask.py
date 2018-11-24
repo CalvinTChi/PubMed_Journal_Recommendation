@@ -38,7 +38,7 @@ def generate_feature_label_pair(mat):
     Yj = labelEncoder.transform(Yj)
     Yj = to_categorical(Yj, num_classes = len(labelEncoder.classes_))
     Yi = mat.iloc[:, 4].tolist()
-    return X, Yc, Yj, Yi
+    return X, {"category": Yc, "journal": Yj, "if": Yi}
 
 def sample_generator():
     global trainIterator
@@ -50,7 +50,7 @@ def sample_generator():
             trainIterator = iter(trainIterator)
             chunk = next(trainIterator)
         X, Yc, Yj, Yi = generate_feature_label_pair(chunk)
-        yield X, Yc, Yj, Yi
+        yield X, {"category": Yc, "journal": Yj, "if": Yi}
 
 def create_model():
     sequence_input = Input(shape=(MAX_SEQ_LENGTH,), dtype='int32')
@@ -84,11 +84,11 @@ def main():
     #dev = pd.read_table("data/dev_j.txt", delimiter="\t", header = 0)
     #devX, devY = generate_feature_label_pair(dev)
     #nBatches = math.ceil(nTrain / BATCH_SIZE)
-    #trainIterator2 = pd.read_table("data/train_j.txt", delimiter="\t", header = 0)
     model = create_model()
     print(summary(model))
-    #model.fit_generator(sample_generator(), steps_per_epoch = nBatches, epochs=2, validation_data=(devX, devY))
-    #model.save("model/journal_embedding_model.h5")
+    #model.fit_generator(sample_generator(), steps_per_epoch = nBatches, epochs=2, 
+        validation_data=(devX, devY))
+    #model.save("model/multitask1.h5")
 
 if __name__ == "__main__":
     main()
