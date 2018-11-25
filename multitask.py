@@ -13,7 +13,7 @@ import gensim
 import math
 import sys
 import os
-
+vi nohup.multitask1.out
 EMBEDDING_DIM = 200
 BATCH_SIZE = 512
 MAX_SEQ_LENGTH = 500
@@ -24,21 +24,35 @@ tokenizer = pickle.load(open("data/tokenizer.p", "rb"))
 labelEncoder = pickle.load(open("data/label_encoder.p", "rb"))
 trainIterator = pd.read_table("data/train_j.txt", delimiter="\t", header = 0, chunksize=BATCH_SIZE)
 trainIterator = iter(trainIterator)
+quartiles = {0: 2.5, 1: 5, 2: 10, 3: 15}
+
+def if2quartile(ifactor):
+    if ifactor <= quartiles[0]:
+        return 0
+    elif ifactor > quartiles[0] and ifactor <= quartiles[1]:
+        return 1
+    elif ifactor > quartiles[1] and ifactor <= quartiles[2]:
+        return 2
+    elif ifactor > quartiles[2] and ifactor <= quartiles[3]:
+        return 3
+    elif ifactor > quartiles[3]:
+        return 4
 
 # INPUT: pandas df of rows x features1, where features = [abstract, PMID, category, journalAbbrev, impact_factor]
-# OUTPUT: (1) pandas df of rows x word2vec feature, (2) vector of labels corresponding to journals.
+# OUTPUT: (1) pandas df of rows x word2vec feature, (2) prediction targets
 def generate_feature_label_pair(mat):
     X = tokenizer.texts_to_sequences(mat.iloc[:, 0])
     X = pad_sequences(X, maxlen = MAX_SEQ_LENGTH, padding='post')
     Yc = mat.iloc[:, 2].tolist()
     Yc = [label_mapping[label] for label in Yc]
-    Yc = to_categorical(Yc)
+    Yc = to_categorical(Yc, num_classes = len(label_mapping))
     Yj = mat.iloc[:, 3].tolist()
     Yj = labelEncoder.transform(Yj)
     Yj = to_categorical(Yj, num_classes = len(labelEncoder.classes_))
-    #Yi = mat.iloc[:, 4].as_matrix()
-    #return X, {"category": Yc, "journal": Yj, "if": Yi}
-    return X, {"category": Yc, "journal": Yj}
+    Yi = mat.iloc[:, 4].as_matrix()
+    Yi = np.array([if2quartile[ifactor] for ifactor in Yi])
+    Yi = to_categorical(Yj, num_classes = len(quartiles) + 1)
+    return X, {"category": Yc, "journal": Yj, "if": Yi}
 
 def sample_generator():
     global trainIterator
@@ -69,16 +83,13 @@ def create_model():
     x = Dense(128, activation = 'relu')(x)
     category_output = Dense(len(label_mapping), activation = 'softmax', name = "category")(x)
     journal_output = Dense(len(labelEncoder.classes_), activation = 'softmax', name = "journal")(x)
-    #if_output = Dense(1, kernel_initializer='normal', name = "if")(x)
-    #model = Model(inputs = sequence_input, outputs = [category_output, journal_output, if_output])
-    #model.compile(loss = {'category': 'categorical_crossentropy', 'journal': 'categorical_crossentropy', 
-    #                      'if': 'mean_squared_error'},
-    #             optimizer = keras.optimizers.Adam(lr=0.001), 
-    #             metrics = {'category': 'accuracy', 'journal': 'accuracy', 'if': 'mae'})
-    model = Model(inputs = sequence_input, outputs = [category_output, journal_output])
-    model.compile(loss = {'category': 'categorical_crossentropy', 'journal': 'categorical_crossentropy'},
-        optimizer = keras.optimizers.Adam(lr=0.001),
-        metrics = {'category': 'accuracy', 'journal': 'accuracy'})
+    if_output = Dense(len(quartiles) + 1, activation = 'softmax', name = "if")(x)
+    model = Model(inputs = sequence_input, outputs = [category_output, journal_output, if_output])
+    model.compile(loss = {'category': 'categorical_crossentropy', 'journal': 'categorical_crossentropy', 
+                          'if': 'categorical_crossentropy'},
+                 optimizer = keras.optimizers.Adam(lr=0.001), 
+                 metrics = {'category': 'accuracy', 'journal': 'accuracy', 'if': 'accuracy'})
+    
     return model
 
 def main():
