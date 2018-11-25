@@ -1,6 +1,7 @@
 from keras.layers import Dense, Activation
 from keras.models import Model
 import tensorflow as tf
+from keras.layers.normalization import BatchNormalization
 from keras.models import Sequential
 from keras.preprocessing.sequence import pad_sequences
 from keras.models import load_model
@@ -64,7 +65,9 @@ def sample_generator():
 def create_model():
     model = Sequential()
     model.add(Dense(units=1200, activation='relu', input_shape=(EMBEDDING_SIZE,)))
+    model.add(BatchNormalization())
     model.add(Dense(units=800, activation='relu'))
+    model.add(BatchNormalization())
     model.add(Dense(units=len(labelEncoder.classes_), activation = 'softmax'))
     model.compile(loss = 'categorical_crossentropy',
                  optimizer = keras.optimizers.Adam(lr=0.001), 

@@ -1,6 +1,7 @@
 from keras.layers import Input, Dense, Flatten, Embedding, Conv1D, MaxPooling1D, Activation
 from tensorflow.contrib.keras.api.keras.initializers import Constant
 from keras.preprocessing.sequence import pad_sequences
+from keras.layers.normalization import BatchNormalization
 from sklearn.preprocessing import LabelEncoder
 from keras.models import Sequential
 from keras.models import Model
@@ -75,10 +76,16 @@ def create_model():
                                    input_length = MAX_SEQ_LENGTH,
                                    trainable = False)
     embedded_sequences = embedded_layer(sequence_input)
+    # convolution 1st layer
     x = Conv1D(128, 5, activation='relu', input_shape = (200, 1))(embedded_sequences)
+    x = BatchNormalization()(x)
     x = MaxPooling1D(5)(x)
+
+    # convolution 2nd layer
     x = Conv1D(128, 5, activation='relu')(x)
+    x = BatchNormalization()(x)
     x = MaxPooling1D(35)(x)
+    
     x = Flatten()(x)
     x = Dense(128, activation = 'relu')(x)
     category_output = Dense(len(label_mapping), activation = 'softmax', name = "category")(x)

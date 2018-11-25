@@ -1,6 +1,7 @@
 from keras.layers import Dense, Flatten, Embedding, Conv1D, MaxPooling1D, Activation
 from tensorflow.contrib.keras.api.keras.initializers import Constant
 from keras.preprocessing.sequence import pad_sequences
+from keras.layers.normalization import BatchNormalization
 from keras.models import Sequential
 from keras.utils import to_categorical
 import keras.optimizers
@@ -53,10 +54,16 @@ def create_model():
                                 trainable = False)
     model = Sequential()
     model.add(embedding_layer)
+    # convolution 1st layer
     model.add(Conv1D(128, 5, activation='relu', input_shape = (200, 1)))
+    model.add(BatchNormalization())
     model.add(MaxPooling1D(5))
+
+    # convolution 2nd layer
     model.add(Conv1D(128, 5, activation='relu'))
+    model.add(BatchNormalization())
     model.add(MaxPooling1D(35))
+    
     model.add(Flatten())
     model.add(Dense(128, activation = 'relu'))
     model.add(Dense(8, activation = 'softmax'))

@@ -1,0 +1,90 @@
+from keras.models import load_model
+from keras.preprocessing.sequence import pad_sequences
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import auc
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import pickle
+import math
+import sys
+import os
+
+BATCH_SIZE = 512
+EMBEDDING_DIM = 200
+MAX_SEQ_LENGTH = 500
+tokenizer = pickle.load(open("data/tokenizer.p", "rb"))
+labelEncoder = pickle.load(open("data/label_encoder.p", "rb"))
+
+def generate_feature_label_pair(mat):
+    X = tokenizer.texts_to_sequences(mat.iloc[:, 0])
+    X = pad_sequences(X, maxlen = MAX_SEQ_LENGTH, padding='post')
+    Y = mat.iloc[:, 3].tolist()
+    Y = labelEncoder.transform(Y)
+    return X, Y
+
+def rank_predictions(class_prob):
+    return sorted(range(len(class_prob)), key=lambda i: class_prob[i], reverse=True)
+
+def k_coverage_accuracy(ytrue, ypred, k):
+    cover = []
+    ypred = ypred[:, :k]
+    for i in range(ypred.shape[0]):
+        if ytrue[i] in ypred[i, :]:
+            cover.append(1)
+        else:
+            cover.append(0)
+    return np.mean(cover)
+
+def plot_auc(pCoverage, accuracies, title, filename):
+	plt.plot(pCoverage, accuracies)
+	plt.xlabel("percent coverage")
+	plt.ylabel("coverage accuracy")
+	plt.title(title)
+	plt.savefig("pics/" + filename + ".png")
+
+def main(args):
+	if len(args) == 0:
+		print("Usage: evaluate.py <model_name>")
+		sys.exit(2)
+	filename = args[0] + ".h5"
+	model = load_model("model/" + filename)
+	test = pd.read_table("data/test_j.txt", delimiter="\t", header = 0)
+	testX, testY = generate_feature_label_pair(test)
+	if args[0][:-1] == "embedding":
+		pass
+	# Calculate accuracy
+	classYPred = model.predict_classes(testX)
+	print("Accuracy on test dataset: %s" % (round(accuracy_score(testY, classYPred), 3)))
+	
+	# Calculate coverage auc
+	probYPred = model.predict_proba(testX)
+	rankYPred = np.apply_along_axis(rank_predictions, 1, probYPred)
+	topK = np.arange(0, len(labelEncoder.classes_), 10)
+	pCoverage = [(x + 1) / len(topK) for x in topK]
+	accuracies = []
+	for k in topK:
+    	accuracies.append(k_coverage_accuracy(testY, rankYPred, k))
+    print("Coverage AUC on test dataset: %s" % (round(auc(pCoverage, accuracies), 3)))
+
+    # Plot title
+    if args[0][:-1] == "embedding":
+    	title = "Embedding Model %s AUC" % (round(auc(pCoverage, accuracies), 3))
+    elif args[0][:-1] == "journal_baseline":
+    	title = "Baseline CNN Model %s AUC" % (round(auc(pCoverage, accuracies), 3))
+    elif args[0][:-1] == "multitask":
+    	title = "Multitask CNN Model %s AUC" % (round(auc(pCoverage, accuracies), 3))
+
+    # Plot coverage curve
+    plot_auc(pCoverage, accuracies, title, args[0])
+
+if __name__ == "__main__":
+	try:
+		arg = sys.argv[1:]
+	except:
+		print("Usage: evaluate.py <model_name>")
+		sys.exit(2)
+	main(sys.argv[1:])
+
+
+
