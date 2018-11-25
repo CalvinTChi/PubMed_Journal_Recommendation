@@ -33,11 +33,10 @@ def generate_feature_label_pair(mat):
     Yc = mat.iloc[:, 2].tolist()
     Yc = [label_mapping[label] for label in Yc]
     Yc = to_categorical(Yc)
-    Yc = to_categorical(Yc, num_classes = len(labelEncoder.classes_))
     Yj = mat.iloc[:, 3].tolist()
     Yj = labelEncoder.transform(Yj)
     Yj = to_categorical(Yj, num_classes = len(labelEncoder.classes_))
-    Yi = mat.iloc[:, 4].tolist()
+    Yi = mat.iloc[:, 4].as_matrix()
     return X, {"category": Yc, "journal": Yj, "if": Yi}
 
 def sample_generator():
@@ -49,8 +48,8 @@ def sample_generator():
             trainIterator = pd.read_table("data/train_j.txt", delimiter="\t", header = 0, chunksize=BATCH_SIZE)
             trainIterator = iter(trainIterator)
             chunk = next(trainIterator)
-        X, Yc, Yj, Yi = generate_feature_label_pair(chunk)
-        yield X, {"category": Yc, "journal": Yj, "if": Yi}
+        X, Y = generate_feature_label_pair(chunk)
+        yield X, Y
 
 def create_model():
     sequence_input = Input(shape=(MAX_SEQ_LENGTH,), dtype='int32')
@@ -78,17 +77,16 @@ def create_model():
     return model
 
 def main():
-    # Get number of training samples
-    #with open("data/train_j.txt") as f:
-    #    nTrain = sum(1 for _ in f)
-    #dev = pd.read_table("data/dev_j.txt", delimiter="\t", header = 0)
-    #devX, devY = generate_feature_label_pair(dev)
-    #nBatches = math.ceil(nTrain / BATCH_SIZE)
+    #Get number of training samples
+    with open("data/train_j.txt") as f:
+        nTrain = sum(1 for _ in f)
+    dev = pd.read_table("data/dev_j.txt", delimiter="\t", header = 0)
+    devX, devY = generate_feature_label_pair(dev)
+    nBatches = math.ceil(nTrain / BATCH_SIZE)
     model = create_model()
-    print(summary(model))
-    #model.fit_generator(sample_generator(), steps_per_epoch = nBatches, epochs=2, 
+    model.fit_generator(sample_generator(), steps_per_epoch = nBatches, epochs=2, 
         validation_data=(devX, devY))
-    #model.save("model/multitask1.h5")
+    model.save("model/multitask1.h5")
 
 if __name__ == "__main__":
     main()
