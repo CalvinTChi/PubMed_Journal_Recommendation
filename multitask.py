@@ -76,7 +76,7 @@ def create_model():
     #             optimizer = keras.optimizers.Adam(lr=0.001), 
     #             metrics = {'category': 'accuracy', 'journal': 'accuracy', 'if': 'mae'})
     model = Model(inputs = sequence_input, outputs = [category_output, journal_output])
-    model.compile(loss = {'category': 'categorical_crossentropy', 'journal': 'categorical_crossentropy', 
+    model.compile(loss = {'category': 'categorical_crossentropy', 'journal': 'categorical_crossentropy'},
         optimizer = keras.optimizers.Adam(lr=0.001),
         metrics = {'category': 'accuracy', 'journal': 'accuracy'})
     return model
