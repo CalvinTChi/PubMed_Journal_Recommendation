@@ -1,5 +1,6 @@
 from keras.layers import Dense, Flatten, Embedding, Conv1D, MaxPooling1D, Activation
 from tensorflow.contrib.keras.api.keras.initializers import Constant
+from keras.layers.normalization import BatchNormalization
 from keras.preprocessing.sequence import pad_sequences
 from sklearn.preprocessing import LabelEncoder
 from keras.models import Sequential
@@ -64,10 +65,16 @@ def create_model():
                                 trainable = False)
     model = Sequential()
     model.add(embedding_layer)
+    # convolution 1st layer
     model.add(Conv1D(128, 5, activation='relu', input_shape = (200, 1)))
+    model.add(BatchNormalization())
     model.add(MaxPooling1D(5))
+
+    # convolution 2nd layer
     model.add(Conv1D(128, 5, activation='relu'))
+    model.add(BatchNormalization())
     model.add(MaxPooling1D(35))
+
     model.add(Flatten())
     model.add(Dense(128, activation = 'relu'))
     model.add(Dense(len(labelEncoder.classes_), activation = 'softmax'))
@@ -85,7 +92,7 @@ def main():
     nBatches = math.ceil(nTrain / BATCH_SIZE)
     model = create_model()
     model.fit_generator(sample_generator(), steps_per_epoch = nBatches, epochs=2, validation_data=(devX, devY))
-    model.save("model/journal_embedding_model.h5")
+    model.save("model/journal_model2.h5")
 
 if __name__ == "__main__":
     main()
