@@ -50,8 +50,8 @@ def generate_feature_label_pair(mat):
     Yj = labelEncoder.transform(Yj)
     Yj = to_categorical(Yj, num_classes = len(labelEncoder.classes_))
     Yi = mat.iloc[:, 4].as_matrix()
-    Yi = np.array([if2quartile[ifactor] for ifactor in Yi])
-    Yi = to_categorical(Yj, num_classes = len(quartiles) + 1)
+    Yi = np.array([if2quartile(ifactor) for ifactor in Yi])
+    Yi = to_categorical(Yi, num_classes = len(quartiles) + 1)
     return X, {"category": Yc, "journal": Yj, "if": Yi}
 
 def sample_generator():
