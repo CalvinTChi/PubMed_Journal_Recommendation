@@ -36,8 +36,9 @@ def generate_feature_label_pair(mat):
     Yj = mat.iloc[:, 3].tolist()
     Yj = labelEncoder.transform(Yj)
     Yj = to_categorical(Yj, num_classes = len(labelEncoder.classes_))
-    Yi = mat.iloc[:, 4].as_matrix()
-    return X, {"category": Yc, "journal": Yj, "if": Yi}
+    #Yi = mat.iloc[:, 4].as_matrix()
+    #return X, {"category": Yc, "journal": Yj, "if": Yi}
+    return X, {"category": Yc, "journal": Yj}
 
 def sample_generator():
     global trainIterator
@@ -68,12 +69,16 @@ def create_model():
     x = Dense(128, activation = 'relu')(x)
     category_output = Dense(len(label_mapping), activation = 'softmax', name = "category")(x)
     journal_output = Dense(len(labelEncoder.classes_), activation = 'softmax', name = "journal")(x)
-    if_output = Dense(1, kernel_initializer='normal', name = "if")(x)
-    model = Model(inputs = sequence_input, outputs = [category_output, journal_output, if_output])
+    #if_output = Dense(1, kernel_initializer='normal', name = "if")(x)
+    #model = Model(inputs = sequence_input, outputs = [category_output, journal_output, if_output])
+    #model.compile(loss = {'category': 'categorical_crossentropy', 'journal': 'categorical_crossentropy', 
+    #                      'if': 'mean_squared_error'},
+    #             optimizer = keras.optimizers.Adam(lr=0.001), 
+    #             metrics = {'category': 'accuracy', 'journal': 'accuracy', 'if': 'mae'})
+    model = Model(inputs = sequence_input, outputs = [category_output, journal_output])
     model.compile(loss = {'category': 'categorical_crossentropy', 'journal': 'categorical_crossentropy', 
-                          'if': 'mean_squared_error'},
-                 optimizer = keras.optimizers.Adam(lr=0.001), 
-                 metrics = {'category': 'accuracy', 'journal': 'accuracy', 'if': 'mae'})
+        optimizer = keras.optimizers.Adam(lr=0.001),
+        metrics = {'category': 'accuracy', 'journal': 'accuracy'})
     return model
 
 def main():
@@ -86,7 +91,7 @@ def main():
     model = create_model()
     model.fit_generator(sample_generator(), steps_per_epoch = nBatches, epochs=2, 
         validation_data=(devX, devY))
-    model.save("model/multitask1.h5")
+    model.save("model/multitask2.h5")
 
 if __name__ == "__main__":
     main()
