@@ -13,7 +13,7 @@ import gensim
 import math
 import sys
 import os
-vi nohup.multitask1.out
+
 EMBEDDING_DIM = 200
 BATCH_SIZE = 512
 MAX_SEQ_LENGTH = 500
