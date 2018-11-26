@@ -41,7 +41,7 @@ def plot_auc(pCoverage, accuracies, title, filename):
     plt.xlabel("percent coverage")
     plt.ylabel("coverage accuracy")
     plt.title(title)
-    plt.savefig("pics/" + filename + ".png")
+    plt.savefig("pics/" + filename + ".png", dpi=300)
 
 def main(args):
     if len(args) == 0:
@@ -61,11 +61,15 @@ def main(args):
     probYPred = model.predict_proba(testX)
     rankYPred = np.apply_along_axis(rank_predictions, 1, probYPred)
     topK = np.arange(0, len(labelEncoder.classes_), 10)
-    pCoverage = [(x + 1) / len(topK) for x in topK]
+    pCoverage = [(x + 1) / len(labelEncoder.classes_) for x in topK]
     accuracies = []
     for k in topK:
         accuracies.append(k_coverage_accuracy(testY, rankYPred, k))
     print("Coverage AUC on test dataset: %s" % (round(auc(pCoverage, accuracies), 3)))
+    
+    # Find the coverage that gives 90% accuracy
+    idx90 = next(idx for idx, value in enumerate(accuracies) if value > 0.9) 
+    print("Coverage that yields %s accuracy" % (topK[idx90]))
 
     # Plot title
     if args[0][:-1] == "embedding":
