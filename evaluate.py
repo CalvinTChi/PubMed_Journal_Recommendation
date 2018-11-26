@@ -82,12 +82,16 @@ def main(args):
         global if_graph
         if_graph = tf.get_default_graph()
         testX = convert2embedding(testX)
+    if args[0][:-1] == "multitask":
+        _, probYPred, _ = model.predict(testX)
+    else:
+        probYPred = model.predict(testX)
+    print(probYPred.shape)
     # Calculate accuracy
-    classYPred = model.predict_classes(testX)
+    classYPred = np.argmax(probYPred, axis=1)
     print("Accuracy on test dataset: %s" % (round(accuracy_score(testY, classYPred), 3)))
     
     # Calculate coverage auc
-    probYPred = model.predict_proba(testX)
     rankYPred = np.apply_along_axis(rank_predictions, 1, probYPred)
     topK = np.arange(0, len(labelEncoder.classes_), 10)
     pCoverage = [(x + 1) / len(labelEncoder.classes_) for x in topK]
@@ -98,7 +102,7 @@ def main(args):
     
     # Find the coverage that gives 90% accuracy
     idx90 = next(idx for idx, value in enumerate(accuracies) if value > 0.9) 
-    print("Coverage that yields %s accuracy" % (topK[idx90]))
+    print("Coverage that yields 90% accuracy: %s" % (topK[idx90]))
 
     # Plot title
     if args[0][:-1] == "embedding":
