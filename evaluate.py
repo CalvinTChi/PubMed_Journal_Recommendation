@@ -3,6 +3,7 @@ from keras.preprocessing.sequence import pad_sequences
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import auc
 import matplotlib.pyplot as plt
+import tensorflow as tf
 import numpy as np
 import pandas as pd
 import pickle
@@ -15,6 +16,10 @@ EMBEDDING_DIM = 200
 MAX_SEQ_LENGTH = 500
 tokenizer = pickle.load(open("data/tokenizer.p", "rb"))
 labelEncoder = pickle.load(open("data/label_encoder.p", "rb"))
+topic_model = None
+category_graph = None
+if_model = None
+if_graph = None
 
 def generate_feature_label_pair(mat):
     X = tokenizer.texts_to_sequences(mat.iloc[:, 0])
@@ -25,6 +30,22 @@ def generate_feature_label_pair(mat):
 
 def rank_predictions(class_prob):
     return sorted(range(len(class_prob)), key=lambda i: class_prob[i], reverse=True)
+
+def get_topic_embedding(model, X):
+    f = Model(inputs=model.input, outputs=model.layers[-1].input)
+    with category_graph.as_default():
+        return f.predict(X)
+
+def get_if_embedding(model, X):
+    f = Model(inputs=model.input, outputs=model.layers[-2].output)
+    with if_graph.as_default():
+        return f.predict(X)
+
+def convert2embedding(X):
+    topic_embedding = get_topic_embedding(topic_model, X)
+    if_embedding = get_if_embedding(if_model, X)
+    embedding = np.concatenate((topic_embedding, if_embedding), axis = 1)
+    return embedding
 
 def k_coverage_accuracy(ytrue, ypred, k):
     cover = []
@@ -52,7 +73,15 @@ def main(args):
     test = pd.read_table("data/test_j.txt", delimiter="\t", header = 0)
     testX, testY = generate_feature_label_pair(test)
     if args[0][:-1] == "embedding":
-        pass
+        global topic_model
+        topic_model = load_model("model/category1.h5")
+        global category_graph
+        category_graph = tf.get_default_graph()
+        global if_model
+        if_model = load_model("model/impact_factor1.h5")
+        global if_graph
+        if_graph = tf.get_default_graph()
+        testX = convert2embedding(testX)
     # Calculate accuracy
     classYPred = model.predict_classes(testX)
     print("Accuracy on test dataset: %s" % (round(accuracy_score(testY, classYPred), 3)))
