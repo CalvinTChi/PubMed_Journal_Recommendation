@@ -37,54 +37,54 @@ def k_coverage_accuracy(ytrue, ypred, k):
     return np.mean(cover)
 
 def plot_auc(pCoverage, accuracies, title, filename):
-	plt.plot(pCoverage, accuracies)
-	plt.xlabel("percent coverage")
-	plt.ylabel("coverage accuracy")
-	plt.title(title)
-	plt.savefig("pics/" + filename + ".png")
+    plt.plot(pCoverage, accuracies)
+    plt.xlabel("percent coverage")
+    plt.ylabel("coverage accuracy")
+    plt.title(title)
+    plt.savefig("pics/" + filename + ".png")
 
 def main(args):
-	if len(args) == 0:
-		print("Usage: evaluate.py <model_name>")
-		sys.exit(2)
-	filename = args[0] + ".h5"
-	model = load_model("model/" + filename)
-	test = pd.read_table("data/test_j.txt", delimiter="\t", header = 0)
-	testX, testY = generate_feature_label_pair(test)
-	if args[0][:-1] == "embedding":
-		pass
-	# Calculate accuracy
-	classYPred = model.predict_classes(testX)
-	print("Accuracy on test dataset: %s" % (round(accuracy_score(testY, classYPred), 3)))
-	
-	# Calculate coverage auc
-	probYPred = model.predict_proba(testX)
-	rankYPred = np.apply_along_axis(rank_predictions, 1, probYPred)
-	topK = np.arange(0, len(labelEncoder.classes_), 10)
-	pCoverage = [(x + 1) / len(topK) for x in topK]
-	accuracies = []
-	for k in topK:
-    	accuracies.append(k_coverage_accuracy(testY, rankYPred, k))
+    if len(args) == 0:
+        print("Usage: evaluate.py <model_name>")
+        sys.exit(2)
+    filename = args[0] + ".h5"
+    model = load_model("model/" + filename)
+    test = pd.read_table("data/test_j.txt", delimiter="\t", header = 0)
+    testX, testY = generate_feature_label_pair(test)
+    if args[0][:-1] == "embedding":
+        pass
+    # Calculate accuracy
+    classYPred = model.predict_classes(testX)
+    print("Accuracy on test dataset: %s" % (round(accuracy_score(testY, classYPred), 3)))
+    
+    # Calculate coverage auc
+    probYPred = model.predict_proba(testX)
+    rankYPred = np.apply_along_axis(rank_predictions, 1, probYPred)
+    topK = np.arange(0, len(labelEncoder.classes_), 10)
+    pCoverage = [(x + 1) / len(topK) for x in topK]
+    accuracies = []
+    for k in topK:
+        accuracies.append(k_coverage_accuracy(testY, rankYPred, k))
     print("Coverage AUC on test dataset: %s" % (round(auc(pCoverage, accuracies), 3)))
 
     # Plot title
     if args[0][:-1] == "embedding":
-    	title = "Embedding Model %s AUC" % (round(auc(pCoverage, accuracies), 3))
+        title = "Embedding Model %s AUC" % (round(auc(pCoverage, accuracies), 3))
     elif args[0][:-1] == "journal_baseline":
-    	title = "Baseline CNN Model %s AUC" % (round(auc(pCoverage, accuracies), 3))
+        title = "Baseline CNN Model %s AUC" % (round(auc(pCoverage, accuracies), 3))
     elif args[0][:-1] == "multitask":
-    	title = "Multitask CNN Model %s AUC" % (round(auc(pCoverage, accuracies), 3))
+        title = "Multitask CNN Model %s AUC" % (round(auc(pCoverage, accuracies), 3))
 
     # Plot coverage curve
     plot_auc(pCoverage, accuracies, title, args[0])
 
 if __name__ == "__main__":
-	try:
-		arg = sys.argv[1:]
-	except:
-		print("Usage: evaluate.py <model_name>")
-		sys.exit(2)
-	main(sys.argv[1:])
+    try:
+        arg = sys.argv[1:]
+    except:
+        print("Usage: evaluate.py <model_name>")
+        sys.exit(2)
+    main(sys.argv[1:])
 
 
 
