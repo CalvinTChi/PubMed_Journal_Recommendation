@@ -81,7 +81,7 @@ def create_model():
     x = MaxPooling1D(5)(x)
 
     # convolution 2nd layer
-    x = Conv1D(128, 5, activation='relu'))(x)
+    x = Conv1D(128, 5, activation='relu')(x)
     x = BatchNormalization()(x)
     x = MaxPooling1D(35)(x)
 
@@ -121,7 +121,7 @@ def main():
     nBatches = math.ceil(nTrain / BATCH_SIZE)
     model = create_model()
     #model.fit_generator(sample_generator(), steps_per_epoch = nBatches, epochs=2, validation_data=(devX, devY))
-    #model.save("model/embedding2.h5")
+    #model.save("model/embedding3.h5")
 
 if __name__ == "__main__":
     main()
