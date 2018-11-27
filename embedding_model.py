@@ -63,7 +63,7 @@ def sample_generator():
             chunk = next(trainIterator)
         X, Y = generate_feature_label_pair(chunk)
         embedding = convert2embedding(X)
-        yield embedding, Y
+        yield [X, embedding], Y
 
 def create_model():
     text_inputs = Input(shape = (MAX_SEQ_LENGTH, ))
@@ -115,11 +115,12 @@ def main():
     # Get number of training samples
     with open("data/train_j.txt") as f:
         nTrain = sum(1 for _ in f)
-    dev = pd.read_table("data/dev_j.txt", delimiter="\t", header = 0)
-    devX, devY = generate_feature_label_pair(dev)
-    devX = convert2embedding(devX)
-    nBatches = math.ceil(nTrain / BATCH_SIZE)
+    #dev = pd.read_table("data/dev_j.txt", delimiter="\t", header = 0)
+    #devX, devY = generate_feature_label_pair(dev)
+    #devX = convert2embedding(devX)
+    #nBatches = math.ceil(nTrain / BATCH_SIZE)
     model = create_model()
+    print(model.summary())
     #model.fit_generator(sample_generator(), steps_per_epoch = nBatches, epochs=2, validation_data=(devX, devY))
     #model.save("model/embedding3.h5")
 
