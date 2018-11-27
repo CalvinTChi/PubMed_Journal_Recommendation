@@ -41,7 +41,7 @@ def generate_feature_label_pair(mat):
     X = tokenizer.texts_to_sequences(mat.iloc[:, 0])
     X = pad_sequences(X, maxlen = MAX_SEQ_LENGTH, padding='post')
     Y = mat.iloc[:, 4].as_matrix()
-    Y = np.array([if2quartile[ifactor] for ifactor in Y])
+    Y = np.array([if2quartile(ifactor) for ifactor in Y])
     Y = to_categorical(Y, num_classes = len(quartiles) + 1)
     return X, Y
 
@@ -77,7 +77,7 @@ def create_model():
     
     model.add(Flatten())
     model.add(Dense(128, activation = 'tanh'))
-    modle.add(Dense(len(quartiles) + 1, activation = 'softmax'))
+    model.add(Dense(len(quartiles) + 1, activation = 'softmax'))
     model.compile(loss = 'categorical_crossentropy',
                  optimizer = keras.optimizers.Adam(lr=0.001), 
                  metrics = ['accuracy'])
