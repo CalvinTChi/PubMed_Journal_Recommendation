@@ -1,6 +1,10 @@
+from keras.layers import Dense, Flatten, Embedding, Conv1D, MaxPooling1D, Activation, Input, concatenate, Dropout
+from keras.layers.normalization import BatchNormalization
 from keras.models import load_model, Model 
 from keras.preprocessing.sequence import pad_sequences
 from sklearn.metrics import accuracy_score, auc
+from embedding_model import create_model
+from tensorflow.contrib.keras.api.keras.initializers import Constant
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import numpy as np
@@ -15,6 +19,7 @@ EMBEDDING_DIM = 200
 MAX_SEQ_LENGTH = 500
 tokenizer = pickle.load(open("data/tokenizer.p", "rb"))
 labelEncoder = pickle.load(open("data/label_encoder.p", "rb"))
+embedding_matrix = pickle.load(open("data/embedding.p", "rb"))
 topic_model = None
 category_graph = None
 if_model = None
@@ -68,7 +73,6 @@ def main(args):
         print("Usage: evaluate.py <model_name>")
         sys.exit(2)
     filename = args[0] + ".h5"
-    model = load_model("model/" + filename)
     test = pd.read_table("data/test_j.txt", delimiter="\t", header = 0)
     testX, testY = generate_feature_label_pair(test)
     if args[0][:-1] == "embedding":
@@ -80,9 +84,16 @@ def main(args):
         if_model = load_model("model/impact_factor1.h5")
         global if_graph
         if_graph = tf.get_default_graph()
-        testX = convert2embedding(testX)
+        testEmbedding = convert2embedding(testX)
+        model = create_model()
+        model = model.load_weights("model/" + filename)
+    else:
+        model = load_model("model/" + filename)
+
     if args[0][:-1] == "multitask":
         _, probYPred, _ = model.predict(testX)
+    elif args[0][:-1] == "embedding":
+        probYPred = model.predict([testX, testEmbedding])
     else:
         probYPred = model.predict(testX)
     # Calculate accuracy
