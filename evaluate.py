@@ -1,7 +1,6 @@
-from keras.models import load_model
+from keras.models import load_model, Model 
 from keras.preprocessing.sequence import pad_sequences
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import auc
+from sklearn.metrics import accuracy_score, auc
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import numpy as np
@@ -86,7 +85,6 @@ def main(args):
         _, probYPred, _ = model.predict(testX)
     else:
         probYPred = model.predict(testX)
-    print(probYPred.shape)
     # Calculate accuracy
     classYPred = np.argmax(probYPred, axis=1)
     print("Accuracy on test dataset: %s" % (round(accuracy_score(testY, classYPred), 3)))
@@ -102,7 +100,7 @@ def main(args):
     
     # Find the coverage that gives 90% accuracy
     idx90 = next(idx for idx, value in enumerate(accuracies) if value > 0.9) 
-    print("Coverage that yields 90% accuracy: %s" % (topK[idx90]))
+    print("Coverage that yields 90%% accuracy: %s" % (topK[idx90]))
 
     # Plot title
     if args[0][:-1] == "embedding":
