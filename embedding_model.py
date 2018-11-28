@@ -1,4 +1,4 @@
-from keras.layers import Dense, Flatten, Embedding, Conv1D, MaxPooling1D, Activation, Input, concatenate
+from keras.layers import Dense, Flatten, Embedding, Conv1D, MaxPooling1D, Activation, Input, concatenate, Dropout
 from tensorflow.contrib.keras.api.keras.initializers import Constant
 from keras.models import Model
 import tensorflow as tf
@@ -88,10 +88,10 @@ def create_model():
     embedding_input = Input(shape = (EMBEDDING_SIZE, ), name = "embedding_input")
     all_features = concatenate([x, embedding_input])
 
-    x = Dense(units=1200, activation='relu', input_shape=(int_shape(all_features),))(all_features)
+    x = Dense(units=1000, activation='relu', input_shape=(int_shape(all_features),))(all_features)
     x = BatchNormalization()(x)
-    x = Dense(units=1000, activation='relu')(x)
-    x = BatchNormalization()(x)
+    x = Dropout(0.1)(x)
+    x = Dense(units=1000, activation='relu', input_shape=(int_shape(all_features),))(x)   
     outputs = Dense(units=len(labelEncoder.classes_), activation = 'softmax')(x)
 
     model = Model([text_inputs, embedding_input], outputs)
@@ -121,7 +121,7 @@ def main():
     nBatches = math.ceil(nTrain / BATCH_SIZE)
     model = create_model()
     model.fit_generator(sample_generator(), steps_per_epoch = nBatches, epochs=2, validation_data=([devText, devEmbedding], devY))
-    model.save("model/embedding3.h5")
+    model.save_weights("model/embedding3.h5")
 
 if __name__ == "__main__":
     main()
