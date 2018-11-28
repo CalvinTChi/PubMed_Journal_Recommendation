@@ -20,10 +20,6 @@ MAX_SEQ_LENGTH = 500
 tokenizer = pickle.load(open("data/tokenizer.p", "rb"))
 labelEncoder = pickle.load(open("data/label_encoder.p", "rb"))
 embedding_matrix = pickle.load(open("data/embedding.p", "rb"))
-topic_model = None
-category_graph = None
-if_model = None
-if_graph = None
 
 def generate_feature_label_pair(mat):
     X = tokenizer.texts_to_sequences(mat.iloc[:, 0])
@@ -76,14 +72,6 @@ def main(args):
     test = pd.read_table("data/test_j.txt", delimiter="\t", header = 0)
     testX, testY = generate_feature_label_pair(test)
     if args[0][:-1] == "embedding":
-        global topic_model
-        topic_model = load_model("model/category1.h5")
-        global category_graph
-        category_graph = tf.get_default_graph()
-        global if_model
-        if_model = load_model("model/impact_factor1.h5")
-        global if_graph
-        if_graph = tf.get_default_graph()
         testEmbedding = convert2embedding(testX)
         model = create_model()
         model = model.load_weights("model/" + filename)
@@ -130,6 +118,13 @@ if __name__ == "__main__":
     except:
         print("Usage: evaluate.py <model_name>")
         sys.exit(2)
+    if sys.argv[1:][0][:-1] == "embedding":
+        topic_model = load_model("model/category1.h5")
+        global category_graph
+        category_graph = tf.get_default_graph()
+        if_model = load_model("model/impact_factor1.h5")
+        global if_graph
+        if_graph = tf.get_default_graph()
     main(sys.argv[1:])
 
 
