@@ -3,11 +3,13 @@ from tensorflow.contrib.keras.api.keras.initializers import Constant
 from keras.models import Model
 import tensorflow as tf
 from keras.backend import int_shape
+from sklearn.metrics import accuracy_score, auc
 from keras.layers.normalization import BatchNormalization
 from keras.models import Sequential
 from keras.preprocessing.sequence import pad_sequences
 from keras.models import load_model
 import keras.optimizers
+import matplotlib.pyplot as plt
 from baseline import generate_feature_label_pair
 import math
 import numpy as np
@@ -34,6 +36,26 @@ if_graph = tf.get_default_graph()
 
 trainIterator = pd.read_table("data/train_j.txt", delimiter="\t", header = 0, chunksize=BATCH_SIZE)
 trainIterator = iter(trainIterator)
+
+def rank_predictions(class_prob):
+    return sorted(range(len(class_prob)), key=lambda i: class_prob[i], reverse=True)
+
+def k_coverage_accuracy(ytrue, ypred, k):
+    cover = []
+    ypred = ypred[:, :k]
+    for i in range(ypred.shape[0]):
+        if ytrue[i] in ypred[i, :]:
+            cover.append(1)
+        else:
+            cover.append(0)
+    return np.mean(cover)
+
+def plot_auc(pCoverage, accuracies, title, filename):
+    plt.plot(pCoverage, accuracies)
+    plt.xlabel("percent coverage")
+    plt.ylabel("coverage accuracy")
+    plt.title(title)
+    plt.savefig("pics/" + filename + ".png", dpi=300)
 
 def get_topic_embedding(model, X):
     f = Model(inputs=model.input, outputs=model.layers[-1].input)
@@ -115,13 +137,39 @@ def main():
     # Get number of training samples
     with open("data/train_j.txt") as f:
         nTrain = sum(1 for _ in f)
-    dev = pd.read_table("data/dev_j.txt", delimiter="\t", header = 0)
+    dev = pd.read_table("data/test_j.txt", delimiter="\t", header = 0)
     devText, devY = generate_feature_label_pair(dev)
     devEmbedding = convert2embedding(devText)
-    nBatches = math.ceil(nTrain / BATCH_SIZE)
+    #nBatches = math.ceil(nTrain / BATCH_SIZE)
     model = create_model()
-    model.fit_generator(sample_generator(), steps_per_epoch = nBatches, epochs=2, validation_data=([devText, devEmbedding], devY))
-    model.save_weights("model/embedding3.h5")
+    #model.fit_generator(sample_generator(), steps_per_epoch = nBatches, epochs=2, validation_data=([devText, devEmbedding], devY))
+    #model.save_weights("model/embedding2.h5")
+    model.load_weights("model/embedding2.h5")
+    
+    probYPred = model.predict([devText, devEmbedding])
+    # Calculate accuracy
+    classYPred = np.argmax(probYPred, axis=1)
+    devY = np.argmax(devY, axis = 1)
+    print("Accuracy on test dataset: %s" % (round(accuracy_score(devY, classYPred), 3)))
+    
+    # Calculate coverage auc
+    rankYPred = np.apply_along_axis(rank_predictions, 1, probYPred)
+    topK = np.arange(0, len(labelEncoder.classes_), 10)
+    pCoverage = [(x + 1) / len(labelEncoder.classes_) for x in topK]
+    accuracies = []
+    for k in topK:
+        accuracies.append(k_coverage_accuracy(devY, rankYPred, k))
+    print("Coverage AUC on test dataset: %s" % (round(auc(pCoverage, accuracies), 3)))
+    
+    # Find the coverage that gives 90% accuracy
+    idx90 = next(idx for idx, value in enumerate(accuracies) if value > 0.9) 
+    print("Coverage that yields 90%% accuracy: %s" % (topK[idx90]))
+
+    # Plot title
+    title = "Embedding Model %s AUC" % (round(auc(pCoverage, accuracies), 3))
+
+    # Plot coverage curve
+    plot_auc(pCoverage, accuracies, title, "embedding2")
 
 if __name__ == "__main__":
     main()
