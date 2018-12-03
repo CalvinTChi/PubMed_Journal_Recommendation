@@ -71,12 +71,12 @@ def create_model():
     model.add(MaxPooling1D(5))
 
     # convolution 2nd layer
-    model.add(Conv1D(128, 5, activation='tanh'))
+    model.add(Conv1D(128, 5, activation='relu'))
     model.add(BatchNormalization())
     model.add(MaxPooling1D(35))
     
     model.add(Flatten())
-    model.add(Dense(128, activation = 'tanh'))
+    model.add(Dense(128, activation = 'relu'))
     model.add(Dense(len(quartiles) + 1, activation = 'softmax'))
     model.compile(loss = 'categorical_crossentropy',
                  optimizer = keras.optimizers.Adam(lr=0.001), 
