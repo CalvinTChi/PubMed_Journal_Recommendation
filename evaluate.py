@@ -33,7 +33,6 @@ def generate_feature_label_pair(mat):
     X = pad_sequences(X, maxlen = MAX_SEQ_LENGTH, padding='post')
     Y = mat.iloc[:, 3].tolist()
     Y = labelEncoder.transform(Y)
-    Y = to_categorical(Y, num_classes = len(labelEncoder.classes_))
     return X, Y
 
 def rank_predictions(class_prob):
@@ -75,7 +74,7 @@ def main(args):
     elif args[0][:-1] == "embedding":
         probYPred = model.predict([testX, testEmbedding])
     else:
-        _, probYPred = model.predict(testX)
+        probYPred = model.predict(testX)
     # Calculate accuracy
     classYPred = np.argmax(probYPred, axis=1)
     print("Accuracy on test dataset: %s" % (round(accuracy_score(testY, classYPred), 3)))
