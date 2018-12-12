@@ -14,6 +14,22 @@ import math, pickle, sys
 import numpy as np
 import pandas as pd
 
+def get_topic_embedding(model, X):
+    f = Model(inputs=model.input, outputs=model.layers[-1].input)
+    with category_graph.as_default():
+        return f.predict(X)
+
+def get_if_embedding(model, X):
+    f = Model(inputs=model.input, outputs=model.layers[-2].output)
+    with if_graph.as_default():
+        return f.predict(X)
+
+def convert2embedding(X):
+    topic_embedding = get_topic_embedding(topic_model, X)
+    if_embedding = get_if_embedding(if_model, X)
+    embedding = np.concatenate((topic_embedding, if_embedding), axis = 1)
+    return embedding
+
 # INPUT: pandas df of rows x features1, where features = [abstract, PMID, category, journalAbbrev, impact_factor]
 # OUTPUT: (1) pandas df of rows x word2vec feature, (2) vector of labels corresponding to journals.
 def generate_feature_label_pair(mat):
@@ -53,8 +69,7 @@ def main(args):
     testX, testY = generate_feature_label_pair(test)
     if args[0][:-1] == "embedding":
         testEmbedding = convert2embedding(testX)
-        #model = create_embedding_model()
-        model = create_model()
+        model = create_embedding_model()
         model.load_weights("model/" + filename)
     else:
         model = load_model("model/" + filename)
@@ -91,7 +106,7 @@ def main(args):
     elif args[0][:-1] == "multitask":
         title = "Multitask CNN Model %s AUC" % (round(auc(pCoverage, accuracies), 3))
 
-    # Plot coverage curve
+    # Plot coverage curve 
     plot_auc(pCoverage, accuracies, title, args[0])
 
 if __name__ == "__main__":
