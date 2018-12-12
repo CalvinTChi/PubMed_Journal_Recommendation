@@ -5,34 +5,14 @@ from keras.preprocessing.sequence import pad_sequences
 from sklearn.preprocessing import LabelEncoder
 from keras.models import Sequential
 from keras.utils import to_categorical
+from utils import *
 import keras.optimizers
 import numpy as np
 import pandas as pd
-import pickle
-import gensim
-import math
-import sys
-import os
+import pickle, gensim, math, sys, os
 
-EMBEDDING_DIM = 200
-BATCH_SIZE = 512
-MAX_SEQ_LENGTH = 500
-embedding_matrix = pickle.load(open("data/embedding.p", "rb"))
-tokenizer = pickle.load(open("data/tokenizer.p", "rb"))
-labelEncoder = pickle.load(open("data/label_encoder.p", "rb"))
 trainIterator = pd.read_table("data/train_j.txt", delimiter="\t", header = 0, chunksize=BATCH_SIZE)
 trainIterator = iter(trainIterator)
-
-# INPUT: chunk = data frame of subset of data, p = percentage dataset to allocate to development and test dataset
-# OUTPUT: dataframes of train, development, and test dataset
-def train_dev_test_split(chunk, p = [0.1, 0.1]):
-    n = chunk.shape[0]
-    devP = round(n * p[0])
-    testP = round(n * p[1])
-    dev = chunk.iloc[0:devP, :]
-    test = chunk.iloc[devP:(devP + testP), :]
-    train = chunk.iloc[(devP + testP):n, :]
-    return train, dev, test
 
 # INPUT: pandas df of rows x features1, where features = [abstract, PMID, category, journalAbbrev, impact_factor]
 # OUTPUT: (1) pandas df of rows x word2vec feature, (2) vector of labels corresponding to journals.

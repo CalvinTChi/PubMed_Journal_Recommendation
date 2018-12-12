@@ -1,4 +1,5 @@
 from keras.layers import Dense, Flatten, Embedding, Conv1D, MaxPooling1D, Activation, Input, concatenate, Dropout
+from embedding_model import create_model, get_topic_embedding, get_if_embedding, convert2embedding
 from tensorflow.contrib.keras.api.keras.initializers import Constant
 from keras.models import Model, load_model
 import tensorflow as tf
@@ -13,62 +14,18 @@ import math, pickle, sys
 import numpy as np
 import pandas as pd
 
-EMBEDDING_SIZE = 256
-
-def create_embedding_model():
-    text_inputs = Input(shape = (MAX_SEQ_LENGTH, ), name = "text_input")
-    word_index = tokenizer.word_index
-    embedding_layer = Embedding(len(word_index) + 1,
-                                EMBEDDING_DIM,
-                                embeddings_initializer = Constant(embedding_matrix),
-                                input_length = MAX_SEQ_LENGTH,
-                                trainable = False)
-    x = embedding_layer(text_inputs)
-
-    # convolution 1st layer
-    x = Conv1D(128, 5, activation='relu', input_shape = (200, 1))(x)
-    x = BatchNormalization()(x)
-    x = MaxPooling1D(5)(x)
-
-    # convolution 2nd layer
-    x = Conv1D(128, 5, activation='relu')(x)
-    x = BatchNormalization()(x)
-    x = MaxPooling1D(35)(x)
-    x = Flatten()(x)
-
-    embedding_input = Input(shape = (EMBEDDING_SIZE, ), name = "embedding_input")
-    all_features = concatenate([x, embedding_input])
-
-    x = Dense(units=1000, activation='relu', input_shape=(int_shape(all_features),))(all_features)
-    x = BatchNormalization()(x)
-    x = Dropout(0.1)(x)
-    x = Dense(units=1000, activation='relu', input_shape=(int_shape(all_features),))(x)   
-    outputs = Dense(units=len(labelEncoder.classes_), activation = 'softmax')(x)
-
-    model = Model([text_inputs, embedding_input], outputs)
-    model.compile(loss = 'categorical_crossentropy',
-                 optimizer = keras.optimizers.Adam(lr=0.001), 
-                 metrics = ['accuracy'])
-    return model
+# INPUT: pandas df of rows x features1, where features = [abstract, PMID, category, journalAbbrev, impact_factor]
+# OUTPUT: (1) pandas df of rows x word2vec feature, (2) vector of labels corresponding to journals.
+def generate_feature_label_pair(mat):
+    X = tokenizer.texts_to_sequences(mat.iloc[:, 0])
+    X = pad_sequences(X, maxlen = MAX_SEQ_LENGTH, padding='post')
+    Y = mat.iloc[:, 3].tolist()
+    Y = labelEncoder.transform(Y)
+    Y = to_categorical(Y, num_classes = len(labelEncoder.classes_))
+    return X, Y
 
 def rank_predictions(class_prob):
     return sorted(range(len(class_prob)), key=lambda i: class_prob[i], reverse=True)
-
-def get_topic_embedding(model, X):
-    f = Model(inputs=model.input, outputs=model.layers[-1].input)
-    with category_graph.as_default():
-        return f.predict(X)
-
-def get_if_embedding(model, X):
-    f = Model(inputs=model.input, outputs=model.layers[-2].output)
-    with if_graph.as_default():
-        return f.predict(X)
-
-def convert2embedding(X):
-    topic_embedding = get_topic_embedding(topic_model, X)
-    if_embedding = get_if_embedding(if_model, X)
-    embedding = np.concatenate((topic_embedding, if_embedding), axis = 1)
-    return embedding
 
 def k_coverage_accuracy(ytrue, ypred, k):
     cover = []
@@ -93,10 +50,11 @@ def main(args):
         sys.exit(2)
     filename = args[0] + ".h5"
     test = pd.read_table("data/test_j.txt", delimiter="\t", header = 0)
-    testX, testY = generate_feature_label_pair(test, 3)
+    testX, testY = generate_feature_label_pair(test)
     if args[0][:-1] == "embedding":
         testEmbedding = convert2embedding(testX)
-        model = create_embedding_model()
+        #model = create_embedding_model()
+        model = create_model()
         model.load_weights("model/" + filename)
     else:
         model = load_model("model/" + filename)
@@ -110,6 +68,7 @@ def main(args):
     # Calculate accuracy
     classYPred = np.argmax(probYPred, axis=1)
     print("Accuracy on test dataset: %s" % (round(accuracy_score(testY, classYPred), 3)))
+    sys.exit(2)
     
     # Calculate coverage auc
     rankYPred = np.apply_along_axis(rank_predictions, 1, probYPred)
@@ -148,5 +107,6 @@ if __name__ == "__main__":
         if_model = load_model("model/impact_factor1.h5")
         global if_graph
         if_graph = tf.get_default_graph()
+    #sys.exit(2)
     main(sys.argv[1:])
 

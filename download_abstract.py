@@ -3,9 +3,7 @@ from Bio import Medline
 import numpy as np
 import pandas as pd
 from urllib.error import URLError
-import math
-import time
-import sys
+import math, time, sys
 
 
 # INPUT: search term for PubMed

@@ -33,12 +33,6 @@ def generate_abstract_label(mat, yIdx):
 def get_topic_embedding(model, X):
 	f = Model(inputs=model.input, outputs=model.layers[-1].input)
 	return f.predict(X)
-	#embedding = f.predict(X)
-	#W = model.layers[-1].get_weights()[0]
-	#b = model.layers[-1].get_weights()[1]
-	#b = np.reshape(b, (1, len(b)))
-	#embedding = np.matmul(embedding, W) + np.matmul(np.ones((embedding.shape[0], 1)), b)
-	#return embedding
 
 def get_if_embedding(model, X):
 	f = Model(inputs=model.input, outputs=model.layers[-2].output)

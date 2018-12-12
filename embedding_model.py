@@ -1,6 +1,6 @@
 from keras.layers import Dense, Flatten, Embedding, Conv1D, MaxPooling1D, Activation, Input, concatenate, Dropout
 from tensorflow.contrib.keras.api.keras.initializers import Constant
-from keras.models import Model, 
+from keras.models import Model, load_model
 import tensorflow as tf
 from utils import *
 from keras.backend import int_shape
@@ -21,11 +21,22 @@ if_graph = tf.get_default_graph()
 trainIterator = pd.read_table("data/train_j.txt", delimiter="\t", header = 0, chunksize=BATCH_SIZE)
 trainIterator = iter(trainIterator)
 
+# INPUT: pandas df of rows x features1, where features = [abstract, PMID, category, journalAbbrev, impact_factor]
+# OUTPUT: (1) pandas df of rows x word2vec feature, (2) vector of labels corresponding to journals.
+def generate_feature_label_pair(mat):
+    X = tokenizer.texts_to_sequences(mat.iloc[:, 0])
+    X = pad_sequences(X, maxlen = MAX_SEQ_LENGTH, padding='post')
+    Y = mat.iloc[:, 3].tolist()
+    Y = labelEncoder.transform(Y)
+    Y = to_categorical(Y, num_classes = len(labelEncoder.classes_))
+    return X, Y
+
 def get_topic_embedding(model, X):
     f = Model(inputs=model.input, outputs=model.layers[-1].input)
     with category_graph.as_default():
         return f.predict(X)
 
+# WHY IS MODEL LAYER -2
 def get_if_embedding(model, X):
     f = Model(inputs=model.input, outputs=model.layers[-2].output)
     with if_graph.as_default():
@@ -46,7 +57,7 @@ def sample_generator():
             trainIterator = pd.read_table("data/train_j.txt", delimiter="\t", header = 0, chunksize=BATCH_SIZE)
             trainIterator = iter(trainIterator)
             chunk = next(trainIterator)
-        X, Y = generate_feature_label_pair(chunk, 3)
+        X, Y = generate_feature_label_pair(chunk)
         embedding = convert2embedding(X)
         yield [np.array(X), np.array(embedding)], Y
 
