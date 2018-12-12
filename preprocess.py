@@ -129,7 +129,7 @@ def main():
     # Tokenize all words in abstract
     batches = batch_generator()
     for batch in batches:
-        tokenizer.fit_on_text(batch)
+        tokenizer.fit_on_texts(batch)
         count_unique_words(batch)
     #Prepare embedding matrix
     embedding_matrix = prepare_embedding_matrix()
