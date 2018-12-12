@@ -4,23 +4,15 @@ from keras.preprocessing.sequence import pad_sequences
 from keras.layers.normalization import BatchNormalization
 from keras.models import Sequential
 from keras.utils import to_categorical
+from utils import *
 import keras.optimizers
 import numpy as np
 import pandas as pd
-import pickle
-import gensim
-import math
-import sys
-import os
+import pickle, gensim, math, sys, os
 
-BATCH_SIZE = 512
-EMBEDDING_DIM = 200
-MAX_SEQ_LENGTH = 500
 global trainIterator
 trainIterator = pd.read_table("data/train.txt", delimiter="\t", header = 0, chunksize=BATCH_SIZE)
 trainIterator = iter(trainIterator)
-tokenizer = pickle.load(open("data/tokenizer.p", "rb"))
-embedding_matrix = pickle.load(open("data/embedding.p", "rb"))
 quartiles = {0: 2.5, 1: 5, 2: 10, 3: 15}
 
 def if2quartile(ifactor):

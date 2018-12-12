@@ -4,25 +4,15 @@ from keras.preprocessing.sequence import pad_sequences
 from keras.layers.normalization import BatchNormalization
 from keras.models import Sequential
 from keras.utils import to_categorical
+from utils import *
 import keras.optimizers
 import numpy as np
 import pandas as pd
-import pickle
-import gensim
-import math
-import sys
-import os
+import pickle, gensim, math, sys, os
 
-label_mapping = {'bioinformatics': 0, 'development': 1, 'epigenetics': 2, 'mendelian': 3, 
-                'omics': 4, 'population_genetics': 5, 'statistical_genetics': 6, 'structure': 7}
-BATCH_SIZE = 512
-EMBEDDING_DIM = 200
-MAX_SEQ_LENGTH = 500
 global trainIterator
 trainIterator = pd.read_table("data/train.txt", delimiter="\t", header = 0, chunksize=BATCH_SIZE)
 trainIterator = iter(trainIterator)
-tokenizer = pickle.load(open("data/tokenizer.p", "rb"))
-embedding_matrix = pickle.load(open("data/embedding.p", "rb"))
 
 # INPUT: pandas df of rows x features1, where features = [abstract, PMID, category, journalAbbrev, impact_factor]
 # OUTPUT: (1) pandas df of rows x word2vec feature, (2) vector of labels in [0, 7].

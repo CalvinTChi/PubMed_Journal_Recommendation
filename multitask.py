@@ -3,26 +3,15 @@ from tensorflow.contrib.keras.api.keras.initializers import Constant
 from keras.preprocessing.sequence import pad_sequences
 from keras.layers.normalization import BatchNormalization
 from sklearn.preprocessing import LabelEncoder
+import pickle, gensim, math, sys, os
+from utils import *
 from keras.models import Sequential
 from keras.models import Model
 from keras.utils import to_categorical
 import keras.optimizers
 import numpy as np
 import pandas as pd
-import pickle
-import gensim
-import math
-import sys
-import os
 
-EMBEDDING_DIM = 200
-BATCH_SIZE = 512
-MAX_SEQ_LENGTH = 500
-label_mapping = {'bioinformatics': 0, 'development': 1, 'epigenetics': 2, 'mendelian': 3, 
-                'omics': 4, 'population_genetics': 5, 'statistical_genetics': 6, 'structure': 7}
-embedding_matrix = pickle.load(open("data/embedding.p", "rb"))
-tokenizer = pickle.load(open("data/tokenizer.p", "rb"))
-labelEncoder = pickle.load(open("data/label_encoder.p", "rb"))
 trainIterator = pd.read_table("data/train_j.txt", delimiter="\t", header = 0, chunksize=BATCH_SIZE)
 trainIterator = iter(trainIterator)
 quartiles = {0: 2.5, 1: 5, 2: 10, 3: 15}
