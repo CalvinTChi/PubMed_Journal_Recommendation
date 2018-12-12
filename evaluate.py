@@ -1,4 +1,5 @@
 from keras.layers import Dense, Flatten, Embedding, Conv1D, MaxPooling1D, Activation, Input, concatenate, Dropout
+from keras.utils import to_categorical
 from embedding_model import create_model, get_topic_embedding, get_if_embedding, convert2embedding
 from tensorflow.contrib.keras.api.keras.initializers import Constant
 from keras.models import Model, load_model
@@ -79,7 +80,7 @@ def main(args):
     elif args[0][:-1] == "embedding":
         probYPred = model.predict([testX, testEmbedding])
     else:
-        probYPred = model.predict(testX)
+        _, probYPred = model.predict(testX)
     # Calculate accuracy
     classYPred = np.argmax(probYPred, axis=1)
     print("Accuracy on test dataset: %s" % (round(accuracy_score(testY, classYPred), 3)))
