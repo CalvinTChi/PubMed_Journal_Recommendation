@@ -6,7 +6,7 @@ Pubmed journal detection from abstract. This walkthrough is intended to aid the 
 
 `Rscript IF_scraping.R`
 
-Next, download a comprehensive list of journals in PubMed [here](ftp://ftp.ncbi.nih.gov/pubmed/J_Medline.txt). 
+Next, download a comprehensive list of journals in PubMed from ftp://ftp.ncbi.nih.gov/pubmed/J_Medline.txt. 
 
 Run this script to fill in impact factor of journals from Medline with scraped impact factors from CiteFactor.
 
