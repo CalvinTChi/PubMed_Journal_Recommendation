@@ -25,13 +25,13 @@ Run this script to
 
 + Split dataset into train, development, and test datasets.
 + Generate metadata for exploratory data analysis
-+ Fit tokenizer: assign the top n frequent words a unique index from 1 to n (0 reserved for unassigned word)
++ Fit tokenizer: assign the top _n_ frequent words a unique index from 1 to _n_ (0 reserved for unassigned word)
 + Prepare embedding matrix for CNN
 + For journal detection, remove journals represented by less than 0.01% (~ 40 abstracts) of abstracts, and split dataset into train, development, and test datasets. This removed about 7.1% of all abstracts.
 
 `python preprocess.py`
 
-Run this script to make some plots from downloaded abstract
+Run this script to make some exploratory data analysis plots from downloaded abstract
 
 `Rscript eda.R`
 
@@ -40,21 +40,17 @@ Run `train_category.py` or `train_if.py` to train baseline CNN to predict topic 
 
 `python train_category.py`
 
-Run this script to visualize embeddings for topic prediction and/or impact factor prediction. To visualize embedding for impact factor or topic only, just include `topic` or `if` respectively.
+Run this script to visualize embeddings for topic prediction and/or impact factor prediction. To visualize embedding for impact factor or topic only, include only `topic` or `if` respectively.
 
 `python visualize_embedding.py topic if`
 
 ## Journal Prediction
-To train the (1) baseline CNN, (2) multi-task CNN, or (3) embedding-augmented CNN, run the scripts `baseline.py`, `multitask.py`, or `embedding_model.py` respectively. 
+To train the (1) baseline CNN, (2) multi-task CNN, or (3) embedding-augmented CNN, run the scripts `baseline.py`, `multitask.py`, or `embedding_model.py` respectively. For example
 
 `python embedding_model.py`
 
 Following script evaluates performance of a model in terms of (1) accuracy, (2) coverage AUC, and (3) k to achieve 90% coverage accuracy. The script also plots the coverage accuracy vs percent coverage curve. To evaluate a model, include the saved model name at the end without the file ending. For example, to evaluate a trained model saved as `embedding2.h5`, run
 
 `python evaluate.py embedding2`
-
-
-
-
 
 
