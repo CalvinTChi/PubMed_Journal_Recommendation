@@ -1,4 +1,4 @@
-# NLP259
+# PubMed Journal Recommendation
 Pubmed journal detection from abstract. This walkthrough is intended to aid the reproduction of results from this [report](https://drive.google.com/open?id=1pP6_46EBdg1Nuz-pZk5sknpvYdQh-FM8), using scripts in this repository. 
 
 ## Collecting the Data
