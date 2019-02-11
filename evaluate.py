@@ -10,6 +10,8 @@ import math, pickle, sys
 import numpy as np
 import pandas as pd
 
+B = 100
+
 def get_topic_embedding(model, X):
     f = Model(inputs=model.input, outputs=model.layers[-1].input)
     with category_graph.as_default():
@@ -26,7 +28,7 @@ def convert2embedding(X):
     embedding = np.concatenate((topic_embedding, if_embedding), axis = 1)
     return embedding
 
-# INPUT: pandas df of rows x features1, where features = [abstract, PMID, category, journalAbbrev, impact_factor]
+# INPUT: pandas df of rows x features, where features = [abstract, PMID, category, journalAbbrev, impact_factor]
 # OUTPUT: (1) pandas df of rows x word2vec feature, (2) vector of labels corresponding to journals.
 def generate_feature_label_pair(mat):
     X = tokenizer.texts_to_sequences(mat.iloc[:, 0])
@@ -55,53 +57,96 @@ def plot_auc(pCoverage, accuracies, title, filename):
     plt.title(title)
     plt.savefig("pics/" + filename + ".png", dpi=300)
 
-def main(args):
-    if len(args) == 0:
-        print("Usage: evaluate.py <model_name>")
-        sys.exit(2)
-    filename = args[0] + ".h5"
-    test = pd.read_table("data/test_j.txt", delimiter="\t", header = 0)
-    testX, testY = generate_feature_label_pair(test)
-    if args[0][:-1] == "embedding":
-        testEmbedding = convert2embedding(testX)
-        model = create_embedding_model()
-        model.load_weights("model/" + filename)
-    else:
-        model = load_model("model/" + filename)
-
-    if args[0][:-1] == "multitask":
-        _, probYPred, _ = model.predict(testX)
-    elif args[0][:-1] == "embedding":
-        probYPred = model.predict([testX, testEmbedding])
-    else:
-        probYPred = model.predict(testX)
-    # Calculate accuracy
-    classYPred = np.argmax(probYPred, axis=1)
-    print("Accuracy on test dataset: %s" % (round(accuracy_score(testY, classYPred), 3)))
-    
-    # Calculate coverage auc
+def calculate_auc(probYPred, testY):
     rankYPred = np.apply_along_axis(rank_predictions, 1, probYPred)
     topK = np.arange(0, len(labelEncoder.classes_), 10)
     pCoverage = [(x + 1) / len(labelEncoder.classes_) for x in topK]
     accuracies = []
     for k in topK:
         accuracies.append(k_coverage_accuracy(testY, rankYPred, k))
-    print("Coverage AUC on test dataset: %s" % (round(auc(pCoverage, accuracies), 3)))
+    return auc(pCoverage, accuracies), accuracies
+
+def main(args):
+    if len(args) == 0:
+        print("Usage: evaluate.py <model_name>")
+        sys.exit(2)
+    filename = args[0] + ".h5"
+
+    df = pd.DataFrame(index = range(B + 1), 
+        columns = ['Accuracy', 'AUC', 'k90'])
+
+    test = pd.read_table("data/test_j.txt", delimiter="\t", header = 0)
+    testX, testY = generate_feature_label_pair(test)
+
+    if args[0][:-1] == "embedding":
+        testEmbedding = convert2embedding(testX)
+        model = create_embedding_model()
+        model.load_weights("model/" + filename)
+        probYPred = model.predict([testX, testEmbedding])
+    elif args[0][:-1] == "multitask":
+        model = load_model("model/" + filename)
+        _, probYPred, _ = model.predict(testX)
+    else:
+        model = load_model("model/" + filename)
+        probYPred = model.predict(testX)
+
+    # Calculate accuracy
+    classYPred = np.argmax(probYPred, axis=1)
+    accuracy = round(accuracy_score(testY, classYPred), 3)
+    print("Accuracy on test dataset: %s" % (accuracy))
+    df.loc[0, "Accuracy"] = accuracy
+    
+    # Calculate coverage auc
+    auc, accuracies = calculate_auc(probYPred, testY)
+    print("Coverage AUC on test dataset: %s" % (auc))
+    df.loc[0, "AUC"] = round(auc, 3)
     
     # Find the coverage that gives 90% accuracy
-    idx90 = next(idx for idx, value in enumerate(accuracies) if value > 0.9) 
-    print("Coverage that yields 90%% accuracy: %s" % (topK[idx90]))
+    idx90 = next(idx for idx, value in enumerate(accuracies) if value > 0.9)
+    k90 = topK[idx90]
+    print("Coverage that yields 90%% accuracy: %s" % (k90))
+    df.loc[0, "k90"] = k90
 
     # Plot title
     if args[0][:-1] == "embedding":
-        title = "Embedding Model %s AUC" % (round(auc(pCoverage, accuracies), 3))
+        title = "Embedding Model %s AUC" % (round(auc, 3))
     elif args[0][:-1] == "journal_baseline":
-        title = "Baseline CNN Model %s AUC" % (round(auc(pCoverage, accuracies), 3))
+        title = "Baseline CNN Model %s AUC" % (round(auc, 3))
     elif args[0][:-1] == "multitask":
-        title = "Multitask CNN Model %s AUC" % (round(auc(pCoverage, accuracies), 3))
+        title = "Multitask CNN Model %s AUC" % (round(auc, 3))
 
     # Plot coverage curve 
+    pCoverage = [(x + 1) / len(labelEncoder.classes_) for x in topK]
     plot_auc(pCoverage, accuracies, title, args[0])
+
+    # Bootstrap test samples to get error bars
+    for i in range(B):
+        if i % 10 == 0:
+            print(i)
+        testB = test.sample(n = df.shape[0], replace = True)
+        testB_X, testB_Y = generate_feature_label_pair(testB)
+        if args[0][:-1] == "multitask":
+            _, probYPred, _ = model.predict(testB_X)
+        elif args[0][:-1] == "embedding":
+            testB_embedding = convert2embedding(testB_X)
+            probYPred = model.predict([testB_X, testB_embedding])
+        else:
+            probYPred = model.predict(testB_X)
+        # calculate accuracy
+        classYPred = np.argmax(probYPred, axis=1)
+        df.loc[i + 1, "Accuracy"] = round(accuracy_score(testB_Y, classYPred), 3)
+
+        # calculate coverage auc
+        auc, accuracies = calculate_auc(probYPred, testB_Y)
+        df.loc[i + 1, "AUC"] = auc
+
+        # Find the coverage that gives 90% accuracy
+        idx90 = next(idx for idx, value in enumerate(accuracies) if value > 0.9)
+        k90 = topK[idx90]
+        df.loc[i + 1, "k90"] = k90
+
+    output_file = args[0][:-1] + "_performance.csv"
+    df.to_csv(output_file, index = False)
 
 if __name__ == "__main__":
     try:
