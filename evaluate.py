@@ -78,7 +78,6 @@ def main(args):
     # Calculate accuracy
     classYPred = np.argmax(probYPred, axis=1)
     print("Accuracy on test dataset: %s" % (round(accuracy_score(testY, classYPred), 3)))
-    sys.exit(2)
     
     # Calculate coverage auc
     rankYPred = np.apply_along_axis(rank_predictions, 1, probYPred)
