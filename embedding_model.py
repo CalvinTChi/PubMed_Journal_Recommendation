@@ -1,5 +1,7 @@
 from keras.layers import Dense, Flatten, Embedding, Conv1D, MaxPooling1D, Activation, Input, concatenate, Dropout
 from tensorflow.contrib.keras.api.keras.initializers import Constant
+from keras.preprocessing.sequence import pad_sequences
+from keras.utils import to_categorical
 from keras.models import Model, load_model
 import tensorflow as tf
 from utils import *
@@ -63,8 +65,7 @@ def sample_generator():
 
 def create_model():
     text_inputs = Input(shape = (MAX_SEQ_LENGTH, ), name = "text_input")
-    word_index = tokenizer.word_index
-    embedding_layer = Embedding(len(word_index) + 1,
+    embedding_layer = Embedding(MAX_NB_WORDS + 1,
                                 EMBEDDING_DIM,
                                 embeddings_initializer = Constant(embedding_matrix),
                                 input_length = MAX_SEQ_LENGTH,
@@ -105,8 +106,9 @@ def main():
     devText, devY = generate_feature_label_pair(dev)
     devEmbedding = convert2embedding(devText)
     nBatches = math.ceil(nTrain / BATCH_SIZE)
+    model = create_model()
     model.fit_generator(sample_generator(), steps_per_epoch = nBatches, epochs=2, validation_data=([devText, devEmbedding], devY))
-    model.save_weights("model/embedding2.h5")
+    model.save_weights("model/embedding3.h5")
 
 if __name__ == "__main__":
     main()

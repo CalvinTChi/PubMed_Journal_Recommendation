@@ -58,8 +58,7 @@ def sample_generator():
 
 def create_model():
     sequence_input = Input(shape=(MAX_SEQ_LENGTH,), dtype='int32')
-    word_index = tokenizer.word_index
-    embedded_layer = Embedding(len(word_index) + 1,
+    embedded_layer = Embedding(MAX_NB_WORDS + 1,
                                    EMBEDDING_DIM,
                                    embeddings_initializer = Constant(embedding_matrix),
                                    input_length = MAX_SEQ_LENGTH,
@@ -98,7 +97,7 @@ def main():
     model = create_model()
     model.fit_generator(sample_generator(), steps_per_epoch = nBatches, epochs=2, 
         validation_data=(devX, devY))
-    model.save("model/multitask2.h5")
+    model.save("model/multitask3.h5")
 
 if __name__ == "__main__":
     main()

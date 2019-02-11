@@ -10,7 +10,8 @@ import sys
 
 JOURNAL_MIN_NUM = 40
 BATCH_SIZE = 1000
-MAX_NB_WORDS = 750000
+#MAX_NB_WORDS = 750000
+MAX_NB_WORDS = 100000
 EMBEDDING_DIM = 200
 journalSet = None
 
@@ -99,12 +100,16 @@ def count_unique_words(batch):
         uniqueWords.update(abstract)
 
 def prepare_embedding_matrix():
+    # word_index still holds mapping between every word encountered and number
     word_index = tokenizer.word_index
-    embedding_matrix = np.zeros((len(word_index) + 1, EMBEDDING_DIM))
-    for word, i in word_index.items():
+    word_counts = tokenizer.word_counts
+    word_counts = sorted(word_counts.items(), key=lambda x: x[1], reverse=True)
+    embedding_matrix = np.zeros((MAX_NB_WORDS + 1, EMBEDDING_DIM))
+    for word, count in word_counts[:MAX_NB_WORDS]:
+        idx = word_index[word]
         if word in word2vec:
             vec = word2vec[word]
-            embedding_matrix[i] = vec / np.linalg.norm(vec)
+            embedding_matrix[idx] = vec / np.linalg.norm(vec)
     return embedding_matrix
 
 # Shuffle rows of dataset
@@ -114,11 +119,11 @@ def shuffle_dataset():
     abstracts.to_csv("data/abstracts.txt", index = False, sep = '\t')
 
 def main():
-    shuffle_dataset()
+    # shuffle_dataset()
     # Prepare datasets for category and impact factor prediction
     if not os.path.isfile("data/train.txt") or not os.path.isfile("data/dev.txt") or not os.path.isfile("data/test.txt"):
         split_dataset()
-    generate_metadata()
+    # generate_metadata()
     # Prepare datasets for journal prediction
     if not os.path.isfile("data/train_j.txt") or not os.path.isfile("data/dev_j.txt") or not os.path.isfile("data/test_j.txt"):
         journal_prediction_split_dataset()
@@ -133,8 +138,10 @@ def main():
         count_unique_words(batch)
     #Prepare embedding matrix
     embedding_matrix = prepare_embedding_matrix()
-    pickle.dump(tokenizer, open("data/tokenizer.p", "wb"))
-    pickle.dump(embedding_matrix, open("data/embedding.p", "wb"))
+    print(embedding_matrix.shape)
+    print(len(tokenizer.word_index))
+    pickle.dump(tokenizer, open("data/tokenizer2.p", "wb"))
+    pickle.dump(embedding_matrix, open("data/embedding2.p", "wb"))
     print("Number of unique words: %s" % len(uniqueWords))
 
 if __name__ == "__main__":

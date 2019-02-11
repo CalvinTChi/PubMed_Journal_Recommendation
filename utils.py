@@ -12,6 +12,7 @@ EMBEDDING_SIZE = 256
 BATCH_SIZE = 512
 EMBEDDING_DIM = 200
 MAX_SEQ_LENGTH = 500
+MAX_NB_WORDS = 100000
 tokenizer = pickle.load(open("data/tokenizer.p", "rb"))
 labelEncoder = pickle.load(open("data/label_encoder.p", "rb"))
 embedding_matrix = pickle.load(open("data/embedding.p", "rb"))
@@ -20,8 +21,7 @@ label_mapping = {'bioinformatics': 0, 'development': 1, 'epigenetics': 2, 'mende
 
 def create_embedding_model():
     text_inputs = Input(shape = (MAX_SEQ_LENGTH, ), name = "text_input")
-    word_index = tokenizer.word_index
-    embedding_layer = Embedding(len(word_index) + 1,
+    embedding_layer = Embedding(MAX_NB_WORDS + 1,
                                 EMBEDDING_DIM,
                                 embeddings_initializer = Constant(embedding_matrix),
                                 input_length = MAX_SEQ_LENGTH,
