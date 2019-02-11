@@ -103,6 +103,7 @@ def main(args):
     
     # Find the coverage that gives 90% accuracy
     idx90 = next(idx for idx, value in enumerate(accuracies) if value > 0.9)
+    topK = np.arange(0, len(labelEncoder.classes_), 10)
     k90 = topK[idx90]
     print("Coverage that yields 90%% accuracy: %s" % (k90))
     df.loc[0, "k90"] = k90
@@ -138,7 +139,7 @@ def main(args):
 
         # calculate coverage auc
         auc, accuracies = calculate_auc(probYPred, testB_Y)
-        df.loc[i + 1, "AUC"] = auc
+        df.loc[i + 1, "AUC"] = round(auc, 3)
 
         # Find the coverage that gives 90% accuracy
         idx90 = next(idx for idx, value in enumerate(accuracies) if value > 0.9)
