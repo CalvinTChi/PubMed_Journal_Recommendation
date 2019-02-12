@@ -67,11 +67,11 @@ def calculate_auc(probYPred, testY):
     return auc(pCoverage, accuracies), accuracies
 
 def calculate_recall(classYPred, testY):
-    recallDf = pd.DataFrame(index = labelEncoder.classes_,
+    recallDf = pd.DataFrame(0, index = labelEncoder.classes_,
         columns = ["number", "num_correct"])
     testYname = labelEncoder.inverse_transform(testY)
     predYname = labelEncoder.inverse_transform(classYPred)
-    for i in range(len(testYname):
+    for i in range(len(testYname)):
         recallDf.loc[testYname[i], "number"] += 1
         if testYname[i] == predYname[i]:
             recallDf.loc[testYname[i], "num_correct"] += 1
@@ -80,12 +80,12 @@ def calculate_recall(classYPred, testY):
     recallDf["rank"] = list(range(1, recallDf.shape[0] + 1, 1))
     return recallDf
 
-def plot_recall_by_popularity(recallDf, filename):
-    plt.plot(recallDf['rank'], recallDf['percent'])
-    plt.xlabel("class frequency rank")
-    plt.ylabel("recall")
-    plt.xticks(recallDf['rank'])
-    plt.savefig("pics/" + filename + ".png", dpi=300)
+#def plot_recall_by_popularity(recallDf, filename):
+#    plt.plot(recallDf['rank'], recallDf['percent'])
+#    plt.xlabel("class frequency rank")
+#    plt.ylabel("recall")
+#    plt.xticks([])
+#    plt.savefig("pics/" + filename + ".png", dpi=300)
 
 def main(args):
     if len(args) == 0:
@@ -119,7 +119,8 @@ def main(args):
 
     # Calculate recall by class
     recallDf = calculate_recall(classYPred, testY)
-    plot_recall_by_popularity(recallDf, args[0] + "_recall")
+    #plot_recall_by_popularity(recallDf, args[0] + "_recall")
+    recallDf.to_csv(args[0] + "_recall.csv", index = False)
 
     # Calculate coverage auc
     auc, accuracies = calculate_auc(probYPred, testY)
