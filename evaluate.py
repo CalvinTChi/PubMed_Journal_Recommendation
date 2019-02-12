@@ -66,6 +66,27 @@ def calculate_auc(probYPred, testY):
         accuracies.append(k_coverage_accuracy(testY, rankYPred, k))
     return auc(pCoverage, accuracies), accuracies
 
+def calculate_recall(classYPred, testY):
+    recallDf = pd.DataFrame(index = labelEncoder.classes_,
+        columns = ["number", "num_correct"])
+    testYname = labelEncoder.inverse_transform(testY)
+    predYname = labelEncoder.inverse_transform(classYPred)
+    for i in range(len(testYname):
+        recallDf.loc[testYname[i], "number"] += 1
+        if testYname[i] == predYname[i]:
+            recallDf.loc[testYname[i], "num_correct"] += 1
+    recallDf["percent"] = recallDf["num_correct"] / recallDf["number"]
+    recallDf = recallDf.sort_values(by = ["number"], ascending = False)
+    recallDf["rank"] = list(range(1, recallDf.shape[0] + 1, 1))
+    return recallDf
+
+def plot_recall_by_popularity(recallDf, filename):
+    plt.plot(recallDf['rank'], recallDf['percent'])
+    plt.xlabel("class frequency rank")
+    plt.ylabel("recall")
+    plt.xticks(recallDf['rank'])
+    plt.savefig("pics/" + filename + ".png", dpi=300)
+
 def main(args):
     if len(args) == 0:
         print("Usage: evaluate.py <model_name>")
@@ -95,7 +116,11 @@ def main(args):
     accuracy = round(accuracy_score(testY, classYPred), 3)
     print("Accuracy on test dataset: %s" % (accuracy))
     df.loc[0, "Accuracy"] = accuracy
-    
+
+    # Calculate recall by class
+    recallDf = calculate_recall(classYPred, testY)
+    plot_recall_by_popularity(recallDf, args[0] + "_recall")
+
     # Calculate coverage auc
     auc, accuracies = calculate_auc(probYPred, testY)
     print("Coverage AUC on test dataset: %s" % (auc))
@@ -121,33 +146,36 @@ def main(args):
     plot_auc(pCoverage, accuracies, title, args[0])
 
     # Bootstrap test samples to get error bars
-    for i in range(B):
-        if i % 100 == 0:
-            print("bootstrap sample number " + str(i))
-        testB = test.sample(n = df.shape[0], replace = True)
-        testB_X, testB_Y = generate_feature_label_pair(testB)
-        if args[0][:-1] == "multitask":
-            _, probYPred, _ = model.predict(testB_X)
-        elif args[0][:-1] == "embedding":
-            testB_embedding = convert2embedding(testB_X)
-            probYPred = model.predict([testB_X, testB_embedding])
-        else:
-            probYPred = model.predict(testB_X)
-        # calculate accuracy
-        classYPred = np.argmax(probYPred, axis=1)
-        df.loc[i + 1, "Accuracy"] = round(accuracy_score(testB_Y, classYPred), 3)
+    bootstrap = False
+    if bootstrap:
+        for i in range(B):
+            if i % 100 == 0:
+                print("bootstrap sample number " + str(i))
+            testB = test.sample(n = df.shape[0], replace = True)
+            testB_X, testB_Y = generate_feature_label_pair(testB)
+            if args[0][:-1] == "multitask":
+                _, probYPred, _ = model.predict(testB_X)
+            elif args[0][:-1] == "embedding":
+                testB_embedding = convert2embedding(testB_X)
+                probYPred = model.predict([testB_X, testB_embedding])
+            else:
+                probYPred = model.predict(testB_X)
 
-        # calculate coverage auc
-        auc, accuracies = calculate_auc(probYPred, testB_Y)
-        df.loc[i + 1, "AUC"] = round(auc, 3)
+            # calculate accuracy
+            classYPred = np.argmax(probYPred, axis=1)
+            df.loc[i + 1, "Accuracy"] = round(accuracy_score(testB_Y, classYPred), 3)
 
-        # Find the coverage that gives 90% accuracy
-        idx90 = next(idx for idx, value in enumerate(accuracies) if value > 0.9)
-        k90 = topK[idx90]
-        df.loc[i + 1, "k90"] = k90
+            # calculate coverage auc
+            auc, accuracies = calculate_auc(probYPred, testB_Y)
+            df.loc[i + 1, "AUC"] = round(auc, 3)
 
-    output_file = args[0][:-1] + "_performance.csv"
-    df.to_csv(output_file, index = False)
+            # Find the coverage that gives 90% accuracy
+            idx90 = next(idx for idx, value in enumerate(accuracies) if value > 0.9)
+            k90 = topK[idx90]
+            df.loc[i + 1, "k90"] = k90
+
+        output_file = args[0][:-1] + "_performance.csv"
+        df.to_csv(output_file, index = False)
 
 if __name__ == "__main__":
     try:
