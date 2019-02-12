@@ -37,8 +37,7 @@ def sample_generator():
         yield X, Y
 
 def create_model():
-    word_index = tokenizer.word_index
-    embedding_layer = Embedding(len(word_index) + 1,
+    embedding_layer = Embedding(MAX_NB_WORDS + 1,
                                 EMBEDDING_DIM,
                                 embeddings_initializer = Constant(embedding_matrix),
                                 input_length = MAX_SEQ_LENGTH,
@@ -72,7 +71,7 @@ def main():
     nBatches = math.ceil(nTrain / BATCH_SIZE)
     model = create_model()
     model.fit_generator(sample_generator(), steps_per_epoch = nBatches, epochs=2, validation_data=(devX, devY))
-    model.save("model/journal_model2.h5")
+    model.save("model/journal_model3.h5")
 
 if __name__ == "__main__":
     main()

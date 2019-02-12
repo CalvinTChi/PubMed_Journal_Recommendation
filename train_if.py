@@ -49,8 +49,7 @@ def sample_generator():
         yield X, Y
 
 def create_model():
-    word_index = tokenizer.word_index
-    embedding_layer = Embedding(len(word_index) + 1,
+    embedding_layer = Embedding(MAX_NB_WORDS + 1,
                                 EMBEDDING_DIM,
                                 embeddings_initializer = Constant(embedding_matrix),
                                 input_length = MAX_SEQ_LENGTH,

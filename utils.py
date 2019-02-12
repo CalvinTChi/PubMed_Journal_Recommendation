@@ -2,6 +2,7 @@ from keras.layers import Dense, Flatten, Embedding, Conv1D, MaxPooling1D, Activa
 from tensorflow.contrib.keras.api.keras.initializers import Constant
 from keras.layers.normalization import BatchNormalization
 from keras.backend import int_shape
+from keras.models import Model
 import keras.optimizers
 import pickle
 #from keras.preprocessing.sequence import pad_sequences

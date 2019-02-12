@@ -10,7 +10,7 @@ import math, pickle, sys
 import numpy as np
 import pandas as pd
 
-B = 100
+B = 1000
 
 def get_topic_embedding(model, X):
     f = Model(inputs=model.input, outputs=model.layers[-1].input)
@@ -122,8 +122,8 @@ def main(args):
 
     # Bootstrap test samples to get error bars
     for i in range(B):
-        if i % 10 == 0:
-            print(i)
+        if i % 100 == 0:
+            print("bootstrap sample number " + str(i))
         testB = test.sample(n = df.shape[0], replace = True)
         testB_X, testB_Y = generate_feature_label_pair(testB)
         if args[0][:-1] == "multitask":
