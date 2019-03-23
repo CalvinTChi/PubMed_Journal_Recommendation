@@ -44,13 +44,15 @@ Run this script to visualize embeddings for topic prediction and/or impact facto
 
 `python visualize_embedding.py topic if`
 
-## Journal Prediction
+## Journal Prediction and Performance Evaluation
 To train the (1) baseline CNN, (2) multi-task CNN, or (3) embedding-augmented CNN, run the scripts `baseline.py`, `multitask.py`, or `embedding_model.py` respectively. For example
 
 `python embedding_model.py`
 
-Following script evaluates performance of a model in terms of (1) accuracy, (2) coverage AUC, and (3) k to achieve 90% coverage accuracy. The script also plots the coverage accuracy vs percent coverage curve. To evaluate a model, include the saved model name at the end without the file ending. For example, to evaluate a trained model saved as `embedding2.h5`, run
+Following script evaluates performance of a model in terms of (1) accuracy, (2) coverage AUC, and (3) k to achieve 90% coverage accuracy. The script also plots the coverage accuracy vs percent coverage curve and creates bootstraps of the dataset to obtain error bars of performance. To evaluate a model, include the saved model name at the end without the file ending. For example, to evaluate a trained model saved as `embedding2.h5`, run
 
 `python evaluate.py embedding2`
 
+Plot performance of each model with corresponding error bars. 
 
+`Rscript error_bars.R`
